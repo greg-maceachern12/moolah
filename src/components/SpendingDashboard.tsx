@@ -1,23 +1,23 @@
 import React, { useState, useCallback } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
-import { DollarSign, CreditCard, Calendar, Sun, ShoppingBag, Upload, RefreshCw } from 'lucide-react';
+import { XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
+import { DollarSign, Calendar, Sun, ShoppingBag, Upload, RefreshCw } from 'lucide-react';
 import Papa from 'papaparse';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82ca9d', '#ffc658'];
-const CATEGORY_COLORS = {
-    'Food & Drink': '#00C49F',
-    'Shopping': '#0088FE',
-    'Travel': '#FFBB28',
-    'Entertainment': '#FF8042',
-    'Health & Wellness': '#8884D8',
-    'Other': '#82ca9d'
-};
+// const CATEGORY_COLORS = {
+//     'Food & Drink': '#00C49F',
+//     'Shopping': '#0088FE',
+//     'Travel': '#FFBB28',
+//     'Entertainment': '#FF8042',
+//     'Health & Wellness': '#8884D8',
+//     'Other': '#82ca9d'
+// };
 
 const SpendingDashboard: React.FC = () => {
     const [yearlySpending, setYearlySpending] = useState<Array<{ month: string, amount: number }>>([]);
     const [categoryBreakdown, setCategoryBreakdown] = useState<Array<{ name: string, value: number }>>([]);
     const [totalSpent, setTotalSpent] = useState(0);
-    const [avgTransaction, setAvgTransaction] = useState(0);
+    // const [avgTransaction, setAvgTransaction] = useState(0);
     const [avgMonthlySpend, setAvgMonthlySpend] = useState(0);
     const [avgDailySpend, setAvgDailySpend] = useState(0);
     const [topMerchant, setTopMerchant] = useState({ name: '', amount: 0 });
@@ -26,7 +26,7 @@ const SpendingDashboard: React.FC = () => {
     const processTransactions = (transactions: any[]) => {
         const total = transactions.reduce((sum, t) => sum + Math.abs(t.amount), 0);
         setTotalSpent(total);
-        setAvgTransaction(total / transactions.length);
+        // setAvgTransaction(total / transactions.length);
 
         const merchantTotals: { [key: string]: number } = {};
         const categoryTotals: { [key: string]: number } = {};
@@ -204,14 +204,14 @@ const SpendingDashboard: React.FC = () => {
                 <div className="bg-white p-4 rounded shadow">
                     <h2 className="text-lg font-semibold mb-4">Monthly Spending Trend</h2>
                     <ResponsiveContainer width="100%" height={300}>
-                        <BarChart data={yearlySpending}>
+                        <LineChart data={yearlySpending}>
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis dataKey="month" />
                             <YAxis />
                             <Tooltip formatter={(value) => formatDollarAmount(value as number)} />
                             <Legend />
-                            <Bar dataKey="amount" fill="#8884d8" />
-                        </BarChart>
+                            <Line type="monotone" dataKey="amount" stroke="#8884d8" />
+                        </LineChart>
                     </ResponsiveContainer>
                 </div>
 
