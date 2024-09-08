@@ -114,7 +114,8 @@ const SpendingDashboard: React.FC = () => {
                     .sort((a, b) => a - b)
                     .map(m => monthOrder[m])
                     .join(', ')
-            }));
+            }))
+            .sort((a, b) => b.amount - a.amount); // Sort by amount in descending order
         setRecurringPayments(recurring);
     };
 
