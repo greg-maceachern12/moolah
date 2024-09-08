@@ -1,100 +1,122 @@
 import React, { useState, useCallback } from 'react';
 import { XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
-import { DollarSign, Calendar, Sun, ShoppingBag, Upload, RefreshCw } from 'lucide-react';
+import { Calendar, Sun, ShoppingBag, Upload, RefreshCw, TrendingUp, TrendingDown } from 'lucide-react';
 import Papa from 'papaparse';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82ca9d', '#ffc658'];
-// const CATEGORY_COLORS = {
-//     'Food & Drink': '#00C49F',
-//     'Shopping': '#0088FE',
-//     'Travel': '#FFBB28',
-//     'Entertainment': '#FF8042',
-//     'Health & Wellness': '#8884D8',
-//     'Other': '#82ca9d'
-// };
+
+const DateRangeDisplay: React.FC<{ startDate: Date | null; endDate: Date | null }> = ({ startDate, endDate }) => {
+    if (!startDate || !endDate) return null;
+
+    const formatDate = (date: Date) => date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+    return (
+        <div className="p-4">
+            {/* <h2 className="text-lg font-semibold mb-2">Transaction Date Range</h2> */}
+            <p className="text-gray-600">
+                From {formatDate(startDate)} to {formatDate(endDate)}
+            </p>
+        </div>
+    );
+};
 
 const SpendingDashboard: React.FC = () => {
+    const [startDate, setStartDate] = useState<Date | null>(null);
+    const [endDate, setEndDate] = useState<Date | null>(null);
     const [yearlySpending, setYearlySpending] = useState<Array<{ month: string, amount: number }>>([]);
     const [categoryBreakdown, setCategoryBreakdown] = useState<Array<{ name: string, value: number }>>([]);
     const [totalSpent, setTotalSpent] = useState(0);
-    // const [avgTransaction, setAvgTransaction] = useState(0);
+    const [totalIncome, setTotalIncome] = useState(0);
     const [avgMonthlySpend, setAvgMonthlySpend] = useState(0);
     const [avgDailySpend, setAvgDailySpend] = useState(0);
     const [topMerchant, setTopMerchant] = useState({ name: '', amount: 0 });
     const [recurringPayments, setRecurringPayments] = useState<Array<{ description: string, amount: number, months: string }>>([]);
 
     const processTransactions = (transactions: any[]) => {
-        const total = transactions.reduce((sum, t) => sum + Math.abs(t.amount), 0);
-        setTotalSpent(total);
-        // setAvgTransaction(total / transactions.length);
-
+        let totalSpent = 0;
+        let totalIncome = 0;
         const merchantTotals: { [key: string]: number } = {};
         const categoryTotals: { [key: string]: number } = {};
         const monthlySpending: { [key: string]: number } = {};
-        const recurringCandidates: { [key: string]: { amount: number, months: Set<number> } } = {};
-
+        const recurringCandidates: { [key: string]: { amount: number, months: number[] } } = {};
+    
         let earliestDate = new Date(transactions[0].date);
         let latestDate = new Date(transactions[0].date);
-
+    
         transactions.forEach(t => {
-            // Update earliest and latest dates
             const transactionDate = new Date(t.date);
             if (transactionDate < earliestDate) earliestDate = transactionDate;
             if (transactionDate > latestDate) latestDate = transactionDate;
-
-            // Merchant totals (only negative amounts)
+    
+            const amount = Math.abs(t.amount);
             if (t.amount < 0) {
-                merchantTotals[t.description] = (merchantTotals[t.description] || 0) + Math.abs(t.amount);
-            }
-
-            // Category totals
-            categoryTotals[t.category] = (categoryTotals[t.category] || 0) + Math.abs(t.amount);
-
-            // Monthly spending
-            const month = transactionDate.toLocaleString('default', { month: 'short' });
-            monthlySpending[month] = (monthlySpending[month] || 0) + Math.abs(t.amount);
-
-            // Recurring payments (only negative amounts)
-            if (t.amount < 0) {
-                const key = `${t.description}-${Math.abs(t.amount).toFixed(2)}`;
+                // Spending
+                totalSpent += amount;
+                merchantTotals[t.description] = (merchantTotals[t.description] || 0) + amount;
+                categoryTotals[t.category] = (categoryTotals[t.category] || 0) + amount;
+    
+                const month = transactionDate.toLocaleString('default', { month: 'short' });
+                monthlySpending[month] = (monthlySpending[month] || 0) + amount;
+    
+                const key = `${t.description}-${amount.toFixed(2)}`;
                 if (!recurringCandidates[key]) {
-                    recurringCandidates[key] = { amount: Math.abs(t.amount), months: new Set() };
+                    recurringCandidates[key] = { amount, months: [] };
                 }
-                recurringCandidates[key].months.add(transactionDate.getMonth());
+                const monthIndex = transactionDate.getMonth();
+                if (!recurringCandidates[key].months.includes(monthIndex)) {
+                    recurringCandidates[key].months.unshift(monthIndex);
+                }
+            } else {
+                // Income
+                totalIncome += amount;
             }
         });
-
-        // Calculate average monthly and daily spend
+    
+        setTotalSpent(totalSpent);
+        setTotalIncome(totalIncome);
+        setStartDate(earliestDate);
+        setEndDate(latestDate);
+    
         const daysDifference = (latestDate.getTime() - earliestDate.getTime()) / (1000 * 3600 * 24) + 1;
         const monthsDifference = (latestDate.getFullYear() - earliestDate.getFullYear()) * 12 +
             (latestDate.getMonth() - earliestDate.getMonth()) + 1;
-
-        setAvgMonthlySpend(total / monthsDifference);
-        setAvgDailySpend(total / daysDifference);
-
-        // Set top merchant (largest sum of money spent)
+    
+        setAvgMonthlySpend(totalSpent / monthsDifference);
+        setAvgDailySpend(totalSpent / daysDifference);
+    
         const topMerchantEntry = Object.entries(merchantTotals).reduce((a, b) => a[1] > b[1] ? a : b);
         setTopMerchant({ name: topMerchantEntry[0], amount: topMerchantEntry[1] });
-
-        // Set category breakdown
-        setCategoryBreakdown(Object.entries(categoryTotals).map(([name, value]) => ({ name, value })));
-
-        // Set yearly spending
+    
+        const sortedCategories = Object.entries(categoryTotals)
+            .sort((a, b) => b[1] - a[1]);
+        
+        const top5Categories = sortedCategories.slice(0, 5);
+        const otherCategories = sortedCategories.slice(5);
+        
+        const otherTotal = otherCategories.reduce((sum, [_, value]) => sum + value, 0);
+        
+        const categoryBreakdownData = [
+            ...top5Categories.map(([name, value]) => ({ name, value })),
+            { name: 'Other', value: otherTotal }
+        ];
+        setCategoryBreakdown(categoryBreakdownData);
+    
         const monthOrder = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         setYearlySpending(monthOrder.map(month => ({ month, amount: monthlySpending[month] || 0 })));
-
-        // Set recurring payments
+    
         const recurringThreshold = 3;
         const recurring = Object.entries(recurringCandidates)
-            .filter(([_, data]) => data.months.size >= recurringThreshold)
+            .filter(([_, data]) => data.months.length >= recurringThreshold)
             .map(([key, data]) => ({
                 description: key.split('-')[0],
                 amount: data.amount,
-                months: Array.from(data.months).map(m => monthOrder[m]).join(', ')
+                months: data.months
+                    .sort((a, b) => a - b)
+                    .map(m => monthOrder[m])
+                    .join(', ')
             }));
         setRecurringPayments(recurring);
     };
-
 
     const handleFileUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -106,11 +128,9 @@ const SpendingDashboard: React.FC = () => {
 
                     if (Array.isArray(results.data) && results.data.length > 0) {
                         if (Array.isArray(results.data[0])) {
-                            // CSV doesn't have headers
                             headers = ['date', 'description', 'amount'];
                             transactions = results.data;
                         } else {
-                            // CSV has headers
                             headers = Object.keys(results.data[0]);
                             transactions = results.data;
                         }
@@ -159,15 +179,24 @@ const SpendingDashboard: React.FC = () => {
                 </label>
                 <input id="csv-upload" type="file" accept=".csv" onChange={handleFileUpload} className="hidden" />
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <DateRangeDisplay startDate={startDate} endDate={endDate} />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-8">
                 <div className="bg-white p-6 rounded-lg shadow-md">
                     <div className="flex items-center justify-between mb-2">
                         <h2 className="text-lg font-semibold text-gray-600">Total Spent</h2>
-                        <DollarSign className="w-6 h-6 text-green-500" />
+                        <TrendingDown className="w-6 h-6 text-red-500" />
+                    </div>
+                    <p className="text-3xl font-bold text-red-600">
+                        {formatDollarAmount(totalSpent)}
+                    </p>
+                </div>
+                <div className="bg-white p-6 rounded-lg shadow-md">
+                    <div className="flex items-center justify-between mb-2">
+                        <h2 className="text-lg font-semibold text-gray-600">Total Income</h2>
+                        <TrendingUp className="w-6 h-6 text-green-500" />
                     </div>
                     <p className="text-3xl font-bold text-green-600">
-                        {formatDollarAmount(totalSpent)}
+                        {formatDollarAmount(totalIncome)}
                     </p>
                 </div>
                 <div className="bg-white p-6 rounded-lg shadow-md">
@@ -193,7 +222,7 @@ const SpendingDashboard: React.FC = () => {
                         <h2 className="text-lg font-semibold text-gray-600">Top Merchant</h2>
                         <ShoppingBag className="w-6 h-6 text-purple-500" />
                     </div>
-                    <p className="text-xl font-bold">{topMerchant.name}</p>
+                    <p className="text-xl font-bold text-black-600">{topMerchant.name}</p>
                     <p className="text-2xl font-bold text-purple-600">
                         {formatDollarAmount(topMerchant.amount)}
                     </p>
@@ -224,7 +253,7 @@ const SpendingDashboard: React.FC = () => {
                                 cx="50%"
                                 cy="50%"
                                 labelLine={false}
-                                outerRadius={80}
+                                outerRadius={100}
                                 fill="#8884d8"
                                 dataKey="value"
                                 label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
