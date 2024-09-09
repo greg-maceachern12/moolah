@@ -52,16 +52,15 @@ const SpendingDashboard: React.FC = () => {
         const monthlyTotals: { [key: string]: number } = {};
         const yearlyTotals: { [key: string]: number } = {};
         let largestExp = { description: '', amount: 0, date: '' };
-    
+
         let earliestDate = new Date(transactions[0].date);
         let latestDate = new Date(transactions[0].date);
-    
+
         transactions.forEach(t => {
             const transactionDate = new Date(t.date);
             if (transactionDate < earliestDate) earliestDate = transactionDate;
             if (transactionDate > latestDate) latestDate = transactionDate;
-            
-    
+
             const amount = Math.abs(t.amount);
 
             const monthYear = transactionDate.toLocaleString('default', { month: 'short', year: 'numeric' });
@@ -70,10 +69,10 @@ const SpendingDashboard: React.FC = () => {
                 totalSpent += amount;
                 merchantTotals[t.description] = (merchantTotals[t.description] || 0) + amount;
                 categoryTotals[t.category] = (categoryTotals[t.category] || 0) + amount;
-    
+
                 const month = transactionDate.toLocaleString('default', { month: 'short' });
                 monthlySpending[month] = (monthlySpending[month] || 0) + amount;
-    
+
                 const key = `${t.description}-${amount.toFixed(2)}`;
                 if (!recurringCandidates[key]) {
                     recurringCandidates[key] = { amount, months: [] };
@@ -94,7 +93,6 @@ const SpendingDashboard: React.FC = () => {
                 dayOfWeekSpending[dayOfWeek].count += 1;
 
                 // Monthly and yearly totals for change calculations
-                
                 const year = transactionDate.toISOString().substring(0, 4);
                 // monthlyTotals[yearMonth] = (monthlyTotals[yearMonth] || 0) + amount;
                 monthlyTotals[monthYear] = (monthlyTotals[monthYear] || 0) + amount;
@@ -104,7 +102,6 @@ const SpendingDashboard: React.FC = () => {
                 totalIncome += amount;
             }
         });
-    
 
         setTotalSpent(totalSpent);
         setTotalIncome(totalIncome);
