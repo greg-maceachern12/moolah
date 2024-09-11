@@ -237,227 +237,230 @@ const SpendingDashboard: React.FC = () => {
     };
 
     return (
-        <div className="p-4 bg-gray-100 min-h-screen">
-            <div className="flex items-center mb-4">
-                <img src="../assets/icon.png" alt="Dashboard icon" className="w-8 h-8 mr-2" />
-                <h1 className="text-2xl font-bold">Spending Dashboard</h1>
-            </div>
+        <div className="min-h-screen p-4 bg-gradient-to-br from-blue-100 via-green-100 to-blue-200">
+            <div className="max-w-7xl mx-auto">
+                <div className="flex items-center mb-4">
+                    {/* <img src="../assets/icon.png" alt="Dashboard icon" className="w-8 h-8 mr-2" /> */}
+                    <h1 className="text-2xl font-bold text-gray-800">Spending Dashboard</h1>
+                </div>
 
-            <div className="mb-4">
-                <label htmlFor="csv-upload" className="cursor-pointer bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded inline-flex items-center">
-                    <Upload className="w-4 h-4 mr-2" />
-                    <span>Upload CSV</span>
-                </label>
-                <input id="csv-upload" type="file" accept=".csv" onChange={handleFileUpload} className="hidden" />
-            </div>
-            {csvUploaded ? (
-                <>
+                <div className="mb-4">
+                    <label htmlFor="csv-upload" className="cursor-pointer bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded inline-flex items-center transition duration-200">
+                        <Upload className="w-4 h-4 mr-2" />
+                        <span>Upload CSV</span>
+                    </label>
+                    <input id="csv-upload" type="file" accept=".csv" onChange={handleFileUpload} className="hidden" />
+                </div>
 
-                    <DateRangeDisplay startDate={startDate} endDate={endDate} />
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-8">
-                        <div className="bg-white p-6 rounded-lg shadow-md">
-                            <div className="flex items-center justify-between mb-2">
-                                <h2 className="text-lg font-semibold text-gray-600">Avg. Monthly Spend</h2>
-                                <Calendar className="w-6 h-6 text-blue-500" />
-                            </div>
-                            <p className="text-3xl font-bold text-blue-600">
-                                {formatDollarAmount(avgMonthlySpend)}
-                            </p>
-                        </div>
-                        <div className="bg-white p-6 rounded-lg shadow-md">
-                            <div className="flex items-center justify-between mb-2">
-                                <h2 className="text-lg font-semibold text-gray-600">Avg. Daily Spend</h2>
-                                <Sun className="w-6 h-6 text-yellow-500" />
-                            </div>
-                            <p className="text-3xl font-bold text-yellow-600">
-                                {formatDollarAmount(avgDailySpend)}
-                            </p>
-                        </div>
-                        <div className="bg-white p-6 rounded-lg shadow-md">
-                            <div className="flex items-center justify-between mb-2">
-                                <h2 className="text-lg font-semibold text-gray-600">Top Merchant</h2>
-                                <ShoppingBag className="w-6 h-6 text-purple-500" />
-                            </div>
-                            <p className="text-xl font-bold text-black-600">{topMerchant.name}</p>
-                            <p className="text-2xl font-bold text-purple-600">
-                                {formatDollarAmount(topMerchant.amount)}
-                            </p>
-                        </div>
-                        <div className="bg-white p-6 rounded-lg shadow-md">
-                            <div className="flex items-center justify-between mb-2">
-                                <h2 className="text-lg font-semibold text-gray-600">Largest Transaction</h2>
-                                <DollarSign className="w-6 h-6 text-orange-500" />
-                            </div>
-                            <p className="text-xl font-bold text-black-600">{largestExpense.description}</p>
-                            <p className="text-2xl font-bold text-orange-600">
-                                {formatDollarAmount(largestExpense.amount)}
-                            </p>
-                            <p className="text-sm text-gray-500">{new Date(largestExpense.date).toLocaleDateString()}</p>
-                        </div>
+                {csvUploaded ? (
+                    <>
 
-                        <div className="bg-white p-6 rounded-lg shadow-md relative">
-                            <div className="flex items-center justify-between mb-2">
-                                <h2 className="text-lg font-semibold text-gray-600">
-                                    {showYearOverYear ? 'Year-over-Year Change' : 'Month-over-Month Change'}
-                                </h2>
-                                <ArrowUpDown className="w-6 h-6 text-indigo-500" />
+                        <DateRangeDisplay startDate={startDate} endDate={endDate} />
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-8">
+                            <div className="bg-white p-6 rounded-lg shadow-md">
+                                <div className="flex items-center justify-between mb-2">
+                                    <h2 className="text-lg font-semibold text-gray-600">Avg. Monthly Spend</h2>
+                                    <Calendar className="w-6 h-6 text-blue-500" />
+                                </div>
+                                <p className="text-3xl font-bold text-blue-600">
+                                    {formatDollarAmount(avgMonthlySpend)}
+                                </p>
                             </div>
-                            <p className={`text-3xl font-bold ${(showYearOverYear ? yearOverYearChange : monthOverMonthChange) >= 0
-                                ? 'text-red-600'
-                                : 'text-green-600'
-                                }`}>
-                                {(showYearOverYear ? yearOverYearChange : monthOverMonthChange).toFixed(2)}%
-                            </p>
-                            <button
-                                onClick={toggleChangeMetric}
-                                className="absolute bottom-2 right-2 px-1.5 py-0.5 text-[10px] bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors"
-                            >
-                                {showYearOverYear ? 'MoM' : 'YoY'}
-                            </button>
-                        </div>
-                        <div className="bg-white p-6 rounded-lg shadow-md">
-                            <div className="flex items-center justify-between mb-2">
-                                <h2 className="text-lg font-semibold text-gray-600">Total Spent</h2>
-                                <TrendingDown className="w-6 h-6 text-red-500" />
+                            <div className="bg-white p-6 rounded-lg shadow-md">
+                                <div className="flex items-center justify-between mb-2">
+                                    <h2 className="text-lg font-semibold text-gray-600">Avg. Daily Spend</h2>
+                                    <Sun className="w-6 h-6 text-yellow-500" />
+                                </div>
+                                <p className="text-3xl font-bold text-yellow-600">
+                                    {formatDollarAmount(avgDailySpend)}
+                                </p>
                             </div>
-                            <p className="text-3xl font-bold text-red-600">
-                                {formatDollarAmount(totalSpent)}
-                            </p>
-                        </div>
-                        <div className="bg-white p-6 rounded-lg shadow-md">
-                            <div className="flex items-center justify-between mb-2">
-                                <h2 className="text-lg font-semibold text-gray-600">Total Income</h2>
-                                <TrendingUp className="w-6 h-6 text-green-500" />
+                            <div className="bg-white p-6 rounded-lg shadow-md">
+                                <div className="flex items-center justify-between mb-2">
+                                    <h2 className="text-lg font-semibold text-gray-600">Top Merchant</h2>
+                                    <ShoppingBag className="w-6 h-6 text-purple-500" />
+                                </div>
+                                <p className="text-xl font-bold text-black-600">{topMerchant.name}</p>
+                                <p className="text-2xl font-bold text-purple-600">
+                                    {formatDollarAmount(topMerchant.amount)}
+                                </p>
                             </div>
-                            <p className="text-3xl font-bold text-green-600">
-                                {formatDollarAmount(totalIncome)}
-                            </p>
-                        </div>
-                    </div>
+                            <div className="bg-white p-6 rounded-lg shadow-md">
+                                <div className="flex items-center justify-between mb-2">
+                                    <h2 className="text-lg font-semibold text-gray-600">Largest Transaction</h2>
+                                    <DollarSign className="w-6 h-6 text-orange-500" />
+                                </div>
+                                <p className="text-xl font-bold text-black-600">{largestExpense.description}</p>
+                                <p className="text-2xl font-bold text-orange-600">
+                                    {formatDollarAmount(largestExpense.amount)}
+                                </p>
+                                <p className="text-sm text-gray-500">{new Date(largestExpense.date).toLocaleDateString()}</p>
+                            </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-                        <div className="bg-white p-4 rounded shadow">
-                            <h2 className="text-lg font-semibold mb-4">Monthly Spending Trend</h2>
-                            <ResponsiveContainer width="100%" height={300}>
-                                <LineChart data={monthlySpending}>
-                                    <CartesianGrid strokeDasharray="3 3" />
-                                    <XAxis
-                                        dataKey="date"
-                                        tickFormatter={(tick) => {
-                                            const [year, month] = tick.split('-');
-                                            // Create a date object for the first day of the month
-                                            const date = new Date(parseInt(year), parseInt(month) - 1, 1);
-                                            // console.log('Tick:', tick, 'Formatted:', date.toLocaleString('default', { month: 'short', year: '2-digit' }));
-                                            return date.toLocaleString('default', { month: 'short', year: '2-digit' });
-                                        }}
-                                    />
-                                    <YAxis />
-                                    <Tooltip
-                                        formatter={(value) => formatDollarAmount(value as number)}
-                                        labelFormatter={(label) => {
-                                            const [year, month] = label.split('-');
-                                            const date = new Date(parseInt(year), parseInt(month) - 1, 1);
-                                            // console.log('Label:', label, 'Formatted:', date.toLocaleString('default', { month: 'long', year: 'numeric' }));
-                                            return date.toLocaleString('default', { month: 'long', year: 'numeric' });
-                                        }}
-                                    />
-                                    <Legend />
-                                    <Line type="monotone" dataKey="amount" stroke="#8884d8" />
-                                </LineChart>
-                            </ResponsiveContainer>
+                            <div className="bg-white p-6 rounded-lg shadow-md relative">
+                                <div className="flex items-center justify-between mb-2">
+                                    <h2 className="text-lg font-semibold text-gray-600">
+                                        {showYearOverYear ? 'Year-over-Year Change' : 'Month-over-Month Change'}
+                                    </h2>
+                                    <ArrowUpDown className="w-6 h-6 text-indigo-500" />
+                                </div>
+                                <p className={`text-3xl font-bold ${(showYearOverYear ? yearOverYearChange : monthOverMonthChange) >= 0
+                                    ? 'text-red-600'
+                                    : 'text-green-600'
+                                    }`}>
+                                    {(showYearOverYear ? yearOverYearChange : monthOverMonthChange).toFixed(2)}%
+                                </p>
+                                <button
+                                    onClick={toggleChangeMetric}
+                                    className="absolute bottom-2 right-2 px-1.5 py-0.5 text-[10px] bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors"
+                                >
+                                    {showYearOverYear ? 'MoM' : 'YoY'}
+                                </button>
+                            </div>
+                            <div className="bg-white p-6 rounded-lg shadow-md">
+                                <div className="flex items-center justify-between mb-2">
+                                    <h2 className="text-lg font-semibold text-gray-600">Total Spent</h2>
+                                    <TrendingDown className="w-6 h-6 text-red-500" />
+                                </div>
+                                <p className="text-3xl font-bold text-red-600">
+                                    {formatDollarAmount(totalSpent)}
+                                </p>
+                            </div>
+                            <div className="bg-white p-6 rounded-lg shadow-md">
+                                <div className="flex items-center justify-between mb-2">
+                                    <h2 className="text-lg font-semibold text-gray-600">Total Income</h2>
+                                    <TrendingUp className="w-6 h-6 text-green-500" />
+                                </div>
+                                <p className="text-3xl font-bold text-green-600">
+                                    {formatDollarAmount(totalIncome)}
+                                </p>
+                            </div>
                         </div>
 
-                        <div className="bg-white p-4 rounded shadow">
-                            <h2 className="text-lg font-semibold mb-4">Spending by Category</h2>
-                            <ResponsiveContainer width="100%" height={300}>
-                                <PieChart>
-                                    <Pie
-                                        data={categoryBreakdown}
-                                        cx="50%"
-                                        cy="50%"
-                                        labelLine={false}
-                                        outerRadius={100}
-                                        fill="#8884d8"
-                                        dataKey="value"
-                                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                                    >
-                                        {categoryBreakdown.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                        ))}
-                                    </Pie>
-                                    <Tooltip formatter={(value) => formatDollarAmount(value as number)} />
-                                </PieChart>
-                            </ResponsiveContainer>
-                        </div>
-
-                        <div className="bg-white p-4 rounded shadow">
-                            <h2 className="text-lg font-semibold mb-4">Avg Spending by Day of Week</h2>
-                            <ResponsiveContainer width="100%" height={300}>
-                                <BarChart data={avgSpendingByDayOfWeek}>
-                                    <CartesianGrid strokeDasharray="3 3" />
-                                    <XAxis dataKey="day" />
-                                    <YAxis />
-                                    <Tooltip formatter={(value) => formatDollarAmount(value as number)} />
-                                    <Legend />
-                                    <Bar dataKey="amount" fill="#8884d8" />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </div>
-                        <div className="grid grid-cols-1 gap-8 mb-8">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
                             <div className="bg-white p-4 rounded shadow">
-                                <h2 className="text-lg font-semibold mb-4">Balance Trend Over Time</h2>
+                                <h2 className="text-lg font-semibold mb-4">Monthly Spending Trend</h2>
                                 <ResponsiveContainer width="100%" height={300}>
-                                    <AreaChart data={balanceTrend}>
+                                    <LineChart data={monthlySpending}>
                                         <CartesianGrid strokeDasharray="3 3" />
                                         <XAxis
                                             dataKey="date"
-                                            tickFormatter={(tick) => new Date(tick).toLocaleDateString('default', { month: 'short', year: '2-digit' })}
+                                            tickFormatter={(tick) => {
+                                                const [year, month] = tick.split('-');
+                                                // Create a date object for the first day of the month
+                                                const date = new Date(parseInt(year), parseInt(month) - 1, 1);
+                                                // console.log('Tick:', tick, 'Formatted:', date.toLocaleString('default', { month: 'short', year: '2-digit' }));
+                                                return date.toLocaleString('default', { month: 'short', year: '2-digit' });
+                                            }}
                                         />
                                         <YAxis />
                                         <Tooltip
                                             formatter={(value) => formatDollarAmount(value as number)}
-                                            labelFormatter={(label) => new Date(label).toLocaleDateString('default', { month: 'long', day: 'numeric', year: 'numeric' })}
+                                            labelFormatter={(label) => {
+                                                const [year, month] = label.split('-');
+                                                const date = new Date(parseInt(year), parseInt(month) - 1, 1);
+                                                // console.log('Label:', label, 'Formatted:', date.toLocaleString('default', { month: 'long', year: 'numeric' }));
+                                                return date.toLocaleString('default', { month: 'long', year: 'numeric' });
+                                            }}
                                         />
                                         <Legend />
-                                        <Area type="monotone" dataKey="balance" stroke="#8884d8" fill="#8884d8" />
-                                    </AreaChart>
+                                        <Line type="monotone" dataKey="amount" stroke="#8884d8" />
+                                    </LineChart>
                                 </ResponsiveContainer>
                             </div>
-                        </div>
-                    </div>
 
-                    <div className="bg-white p-4 rounded shadow">
-                        <div className="flex items-center justify-between mb-4">
-                            <h2 className="text-lg font-semibold">Recurring Payments</h2>
-                            <RefreshCw className="w-6 h-6 text-gray-500" />
+                            <div className="bg-white p-4 rounded shadow">
+                                <h2 className="text-lg font-semibold mb-4">Spending by Category</h2>
+                                <ResponsiveContainer width="100%" height={300}>
+                                    <PieChart>
+                                        <Pie
+                                            data={categoryBreakdown}
+                                            cx="50%"
+                                            cy="50%"
+                                            labelLine={false}
+                                            outerRadius={100}
+                                            fill="#8884d8"
+                                            dataKey="value"
+                                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                        >
+                                            {categoryBreakdown.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip formatter={(value) => formatDollarAmount(value as number)} />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            </div>
+
+                            <div className="bg-white p-4 rounded shadow">
+                                <h2 className="text-lg font-semibold mb-4">Avg Spending by Day of Week</h2>
+                                <ResponsiveContainer width="100%" height={300}>
+                                    <BarChart data={avgSpendingByDayOfWeek}>
+                                        <CartesianGrid strokeDasharray="3 3" />
+                                        <XAxis dataKey="day" />
+                                        <YAxis />
+                                        <Tooltip formatter={(value) => formatDollarAmount(value as number)} />
+                                        <Legend />
+                                        <Bar dataKey="amount" fill="#8884d8" />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
+                            <div className="grid grid-cols-1 gap-8 mb-8">
+                                <div className="bg-white p-4 rounded shadow">
+                                    <h2 className="text-lg font-semibold mb-4">Balance Trend Over Time</h2>
+                                    <ResponsiveContainer width="100%" height={300}>
+                                        <AreaChart data={balanceTrend}>
+                                            <CartesianGrid strokeDasharray="3 3" />
+                                            <XAxis
+                                                dataKey="date"
+                                                tickFormatter={(tick) => new Date(tick).toLocaleDateString('default', { month: 'short', year: '2-digit' })}
+                                            />
+                                            <YAxis />
+                                            <Tooltip
+                                                formatter={(value) => formatDollarAmount(value as number)}
+                                                labelFormatter={(label) => new Date(label).toLocaleDateString('default', { month: 'long', day: 'numeric', year: 'numeric' })}
+                                            />
+                                            <Legend />
+                                            <Area type="monotone" dataKey="balance" stroke="#8884d8" fill="#8884d8" />
+                                        </AreaChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </div>
                         </div>
-                        <div className="overflow-x-auto">
-                            <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-gray-50">
-                                    <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Months Charged</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="bg-white divide-y divide-gray-200">
-                                    {recurringPayments.map((payment, index) => (
-                                        <tr key={index}>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{payment.description}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatDollarAmount(payment.amount)}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{payment.months}</td>
+
+                        <div className="bg-white p-4 rounded shadow">
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 className="text-lg font-semibold">Recurring Payments</h2>
+                                <RefreshCw className="w-6 h-6 text-gray-500" />
+                            </div>
+                            <div className="overflow-x-auto">
+                                <table className="min-w-full divide-y divide-gray-200">
+                                    <thead className="bg-gray-50">
+                                        <tr>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Months Charged</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody className="bg-white divide-y divide-gray-200">
+                                        {recurringPayments.map((payment, index) => (
+                                            <tr key={index}>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{payment.description}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatDollarAmount(payment.amount)}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{payment.months}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
+                    </>
+                ) : (
+                    <div className="text-center mt-8">
+                        <p className="text-xl text-gray-600">Please upload a CSV file to view the spending dashboard.</p>
                     </div>
-                </>
-            ) : (
-                <div className="text-center mt-8">
-                    <p className="text-xl text-gray-600">Please upload a CSV file to view the spending dashboard.</p>
-                </div>
-            )}
+                )}
+            </div>
         </div>
     );
 };
