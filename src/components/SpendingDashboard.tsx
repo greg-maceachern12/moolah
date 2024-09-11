@@ -515,7 +515,7 @@ const SpendingDashboard: React.FC = () => {
                     </>
                 ) : (
                     <div className="text-center mt-8">
-                        <p className="text-xl text-gray-600">Please upload a CSV file to view the spending dashboard.</p>
+                        <p className="text-xl text-gray-600">Please upload a transaction summary CSV from your bank to view the spending dashboard.</p>
                     </div>
                 )}
             </div>
