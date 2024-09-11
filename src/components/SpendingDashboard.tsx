@@ -39,6 +39,7 @@ const SpendingDashboard: React.FC = () => {
     const [balanceTrend, setBalanceTrend] = useState<Array<{ date: string, balance: number }>>([]);
 
     const [csvUploaded, setCsvUploaded] = useState(false);
+    const [hasCategoryData, setHasCategoryData] = useState(false);
 
     const processTransactions = (transactions: any[]) => {
         let totalSpent = 0;
@@ -200,29 +201,25 @@ const SpendingDashboard: React.FC = () => {
     };
 
 
-    const detectCSVType = (headers: string[], firstRow: any): 'AMEX' | 'Chase' | 'Unknown' => {
+    const detectCSVType = (headers: string[]): 'AMEX' | 'Chase' | 'Capital One' | 'Unknown' => {
         const headerSet = new Set(headers);
 
         if (headerSet.has('Date') && headerSet.has('Description') && headerSet.has('Amount')) {
-            // Check if it's likely to be AMEX format
-            const amountValue = parseFloat(firstRow['Amount']);
-            if (!isNaN(amountValue) && Math.abs(amountValue) > 0) {
-                return 'AMEX';
-            }
+            return 'AMEX';
         }
 
         if (headerSet.has('Transaction Date') && headerSet.has('Description') && headerSet.has('Amount') && headerSet.has('Category')) {
-            // Check if it's likely to be Chase format
-            const amountValue = parseFloat(firstRow['Amount']);
-            if (!isNaN(amountValue)) {
-                return 'Chase';
-            }
+            return 'Chase';
+        }
+
+        if (headerSet.has('Account Number') && headerSet.has('Transaction Description') && headerSet.has('Transaction Date') && headerSet.has('Transaction Amount') && headerSet.has('Balance')) {
+            return 'Capital One';
         }
 
         return 'Unknown';
     };
 
-    const processCSVRow = (row: any, csvType: 'AMEX' | 'Chase' | 'Unknown'): {
+    const processCSVRow = (row: any, csvType: 'AMEX' | 'Chase' | 'Capital One' | 'Unknown'): {
         date: string;
         description: string;
         category: string;
@@ -243,6 +240,16 @@ const SpendingDashboard: React.FC = () => {
                 category = row['Category'] || '';
                 amount = parseFloat(row['Amount']);
                 break;
+            case 'Capital One':
+                date = new Date(row['Transaction Date']);
+                description = row['Transaction Description'];
+                category = ''; // Capital One doesn't provide category in this format
+                amount = parseFloat(row['Transaction Amount']);
+                // If it's a debit, make the amount negative
+                if (row['Transaction Type'] === 'Debit') {
+                    amount = -amount;
+                }
+                break;
             default:
                 return null;
         }
@@ -257,17 +264,17 @@ const SpendingDashboard: React.FC = () => {
         };
     };
 
+
     const handleFileUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (file) {
             Papa.parse(file, {
                 complete: (results) => {
-                    if (Array.isArray(results.data) && results.data.length > 1) {
+                    if (Array.isArray(results.data) && results.data.length > 0) {
                         const headers = Object.keys(results.data[0]);
-                        const firstRow = results.data[1];
-                        const csvType = detectCSVType(headers, firstRow);
+                        const detectedType = detectCSVType(headers);
 
-                        if (csvType === 'Unknown') {
+                        if (detectedType === 'Unknown') {
                             console.error('Unknown CSV format');
                             // You might want to show an error message to the user here
                             return;
@@ -275,10 +282,17 @@ const SpendingDashboard: React.FC = () => {
 
                         const processedTransactions = results.data
                             .slice(1) // Skip header row
-                            .map(row => processCSVRow(row, csvType))
-                            .filter(t => t !== null && !isNaN(t.amount) && t.amount !== 0 && t.date);
+                            .map(row => processCSVRow(row, detectedType))
+                            .filter((t): t is NonNullable<ReturnType<typeof processCSVRow>> => 
+                                t !== null && !isNaN(t.amount) && t.amount !== 0 && !!t.date
+                            );
 
                         console.log('Processed transactions:', processedTransactions);
+                        
+                        // Check if any transaction has category data
+                        const categoryDataExists = processedTransactions.some(t => t.category !== '');
+                        setHasCategoryData(categoryDataExists);
+
                         processTransactions(processedTransactions);
                         setCsvUploaded(true);
                     }
@@ -429,25 +443,31 @@ const SpendingDashboard: React.FC = () => {
 
                             <div className="bg-white p-4 rounded shadow">
                                 <h2 className="text-lg font-semibold mb-4">Spending by Category</h2>
-                                <ResponsiveContainer width="100%" height={300}>
-                                    <PieChart>
-                                        <Pie
-                                            data={categoryBreakdown}
-                                            cx="50%"
-                                            cy="50%"
-                                            labelLine={false}
-                                            outerRadius={100}
-                                            fill="#8884d8"
-                                            dataKey="value"
-                                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                                        >
-                                            {categoryBreakdown.map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                            ))}
-                                        </Pie>
-                                        <Tooltip formatter={(value) => formatDollarAmount(value as number)} />
-                                    </PieChart>
-                                </ResponsiveContainer>
+                                {hasCategoryData ? (
+                                    <ResponsiveContainer width="100%" height={300}>
+                                        <PieChart>
+                                            <Pie
+                                                data={categoryBreakdown}
+                                                cx="50%"
+                                                cy="50%"
+                                                labelLine={false}
+                                                outerRadius={100}
+                                                fill="#8884d8"
+                                                dataKey="value"
+                                                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                            >
+                                                {categoryBreakdown.map((entry, index) => (
+                                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                                ))}
+                                            </Pie>
+                                            <Tooltip formatter={(value) => formatDollarAmount(value as number)} />
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                ) : (
+                                    <div className="flex items-center justify-center h-[300px] text-gray-500">
+                                        Category data not available in CSV
+                                    </div>
+                                )}
                             </div>
 
                             <div className="bg-white p-4 rounded shadow">
