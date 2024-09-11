@@ -200,31 +200,88 @@ const SpendingDashboard: React.FC = () => {
     };
 
 
+    const detectCSVType = (headers: string[], firstRow: any): 'AMEX' | 'Chase' | 'Unknown' => {
+        const headerSet = new Set(headers);
+
+        if (headerSet.has('Date') && headerSet.has('Description') && headerSet.has('Amount')) {
+            // Check if it's likely to be AMEX format
+            const amountValue = parseFloat(firstRow['Amount']);
+            if (!isNaN(amountValue) && Math.abs(amountValue) > 0) {
+                return 'AMEX';
+            }
+        }
+
+        if (headerSet.has('Transaction Date') && headerSet.has('Description') && headerSet.has('Amount') && headerSet.has('Category')) {
+            // Check if it's likely to be Chase format
+            const amountValue = parseFloat(firstRow['Amount']);
+            if (!isNaN(amountValue)) {
+                return 'Chase';
+            }
+        }
+
+        return 'Unknown';
+    };
+
+    const processCSVRow = (row: any, csvType: 'AMEX' | 'Chase' | 'Unknown'): {
+        date: string;
+        description: string;
+        category: string;
+        amount: number;
+    } | null => {
+        let date, description, category, amount;
+
+        switch (csvType) {
+            case 'AMEX':
+                date = new Date(row['Date']);
+                description = row['Description'];
+                category = ''; // AMEX doesn't provide category
+                amount = -parseFloat(row['Amount']); // Negate amount as AMEX considers spending as positive
+                break;
+            case 'Chase':
+                date = new Date(row['Transaction Date']);
+                description = row['Description'];
+                category = row['Category'] || '';
+                amount = parseFloat(row['Amount']);
+                break;
+            default:
+                return null;
+        }
+
+        const formattedDate = date.toISOString().split('T')[0];
+
+        return {
+            date: formattedDate,
+            description,
+            category,
+            amount,
+        };
+    };
+
     const handleFileUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (file) {
             Papa.parse(file, {
                 complete: (results) => {
-                    let transactions: any[] = [];
+                    if (Array.isArray(results.data) && results.data.length > 1) {
+                        const headers = Object.keys(results.data[0]);
+                        const firstRow = results.data[1];
+                        const csvType = detectCSVType(headers, firstRow);
 
-                    if (Array.isArray(results.data) && results.data.length > 0) {
-                        transactions = results.data;
+                        if (csvType === 'Unknown') {
+                            console.error('Unknown CSV format');
+                            // You might want to show an error message to the user here
+                            return;
+                        }
+
+                        const processedTransactions = results.data
+                            .slice(1) // Skip header row
+                            .map(row => processCSVRow(row, csvType))
+                            .filter(t => t !== null && !isNaN(t.amount) && t.amount !== 0 && t.date);
+
+                        console.log('Processed transactions:', processedTransactions);
+                        processTransactions(processedTransactions);
+                        setCsvUploaded(true);
                     }
-
-                    const processedTransactions = transactions.map((row: any) => {
-                        const dateObj = new Date(row['Transaction Date']);
-                        const formattedDate = dateObj.toISOString().split('T')[0];
-                        return {
-                            date: formattedDate,
-                            description: row['Description'],
-                            category: row['Category'],
-                            amount: parseFloat(row['Amount']),
-                        };
-                    }).filter(t => !isNaN(t.amount) && t.amount !== 0 && t.date);
-
-                    console.log('Processed transactions:', processedTransactions);
-                    processTransactions(processedTransactions);
-                    setCsvUploaded(true);
                 },
                 header: true,
                 skipEmptyLines: true,
@@ -235,6 +292,7 @@ const SpendingDashboard: React.FC = () => {
     const formatDollarAmount = (amount: number) => {
         return `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     };
+
 
     return (
         <div className="min-h-screen p-4 bg-gradient-to-br from-blue-100 via-green-100 to-blue-200">
@@ -430,7 +488,7 @@ const SpendingDashboard: React.FC = () => {
 
                         <div className="bg-white p-4 rounded shadow">
                             <div className="flex items-center justify-between mb-4">
-                                <h2 className="text-lg font-semibold">Recurring Payments</h2>
+                                <h2 className="text-lg font-semibold">Recurring Monthly Payments</h2>
                                 <RefreshCw className="w-6 h-6 text-gray-500" />
                             </div>
                             <div className="overflow-x-auto">
