@@ -367,12 +367,14 @@ const SpendingDashboard: React.FC = () => {
     return (
         <div className="min-h-screen p-6 bg-gradient-to-br from-blue-100 via-orange-100 to-blue-200">
             <div className="max-w-7xl mx-auto">
-                <div className="mb-8">
-                    <div className="flex justify-between items-center mb-4">
-                        <h1 className="text-3xl font-bold text-indigo-800 flex items-center">
-                            Spending Dashboard
-                            <img src="assets/icon.png" alt="" className="w-10 h-10 ml-2" />
-                        </h1>
+                <div className="mb-6">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 space-y-4 sm:space-y-0">
+                        <div className="flex items-center">
+                            <h1 className="text-2xl sm:text-3xl font-bold text-indigo-800 flex items-center">
+                                Spending Dashboard
+                                <img src="assets/icon.png" alt="" className="w-10 h-10 ml-2" />
+                            </h1>
+                        </div>
                         <label htmlFor="csv-upload" className="cursor-pointer bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg inline-flex items-center transition duration-200">
                             <Upload className="w-5 h-5 mr-2" />
                             <span>Upload CSV</span>
@@ -645,54 +647,43 @@ const SpendingDashboard: React.FC = () => {
                         </div>
                     </div>
                 ) : (
-                    <div className="bg-white bg-opacity-50 backdrop-filter backdrop-blur-sm shadow-lg rounded-xl overflow-hidden mt-8">
-                        <div className="bg-indigo-600 bg-opacity-70 text-white p-6 backdrop-filter backdrop-blur-md">
-                            <h2 className="text-2xl font-bold mb-2">Upload Your Transaction Summary</h2>
-                            <p className="text-indigo-100">
-                                Please upload a transaction summary CSV from your bank to view the spending dashboard.
-                            </p>
+                    <div className="bg-white bg-opacity-40 backdrop-filter backdrop-blur-lg shadow-lg rounded-lg overflow-hidden mt-6 p-5">
+                        <h2 className="text-xl font-bold mb-3 text-indigo-800">Upload Your Transaction Summary</h2>
+                        <p className="text-sm text-gray-700 mb-4">
+                            Please upload a transaction summary CSV from your bank to view the spending dashboard.
+                        </p>
+
+                        <div className="mb-4 bg-green-100 bg-opacity-50 rounded-lg p-3">
+                            <h4 className="text-md font-semibold mb-2 flex items-center text-green-800">
+                                <Shield className="w-4 h-4 mr-2 text-green-600" />
+                                Your Privacy is Protected
+                            </h4>
+                            <ul className="text-sm space-y-1 text-green-700">
+                                <li className="flex items-center">
+                                    <Lock className="w-3 h-3 mr-1 text-green-600" />
+                                    <span>Your data remains entirely private and secure</span>
+                                </li>
+                                <li className="flex items-center">
+                                    <Smartphone className="w-3 h-3 mr-1 text-green-600" />
+                                    <span>All processing happens on your device only</span>
+                                </li>
+                                <li className="flex items-center">
+                                    <FileText className="w-3 h-3 mr-1 text-green-600" />
+                                    <span>No data is stored or transmitted elsewhere</span>
+                                </li>
+                            </ul>
                         </div>
-                        <div className="p-6">
-                            <div className="mb-6 bg-green-100 bg-opacity-70 rounded-lg p-4 backdrop-filter backdrop-blur-sm">
-                                <h4 className="text-lg font-semibold mb-2 flex items-center text-green-800">
-                                    <Shield className="w-6 h-6 mr-2 text-green-700" />
-                                    Your Privacy is Protected
-                                </h4>
-                                <ul className="space-y-2">
-                                    <li className="flex items-center">
-                                        <Lock className="w-5 h-5 mr-2 text-green-700" />
-                                        <span className="text-green-800">Your data remains entirely private and secure</span>
-                                    </li>
-                                    <li className="flex items-center">
-                                        <Smartphone className="w-5 h-5 mr-2 text-green-700" />
-                                        <span className="text-green-800">All processing happens on your device only</span>
-                                    </li>
-                                    <li className="flex items-center">
-                                        <FileText className="w-5 h-5 mr-2 text-green-700" />
-                                        <span className="text-green-800">No data is stored or transmitted elsewhere</span>
-                                    </li>
-                                </ul>
-                            </div>
-                            <h3 className="text-lg font-semibold mb-4 text-gray-800">To download a transaction summary:</h3>
-                            <ol className="space-y-4">
-                                {[
-                                    { icon: <CreditCard className="w-6 h-6" />, text: "Log into your online banking" },
-                                    { icon: <FileText className="w-6 h-6" />, text: "Select the account you want to download a CSV for" },
-                                    { icon: <FileText className="w-6 h-6" />, text: 'Find a "view statements" or "view transaction history" or similar tab and click on it' },
-                                    { icon: <Calendar className="w-6 h-6" />, text: "Insert the date range we have asked you for" },
-                                    { icon: <FileText className="w-6 h-6" />, text: 'Make sure you select the CSV option as the "Output" or "Format"' },
-                                    { icon: <FileDown className="w-6 h-6" />, text: 'Click "Export", "Save" or "Download" and the file will be saved to wherever your computer usually saves files' },
-                                    { icon: <Upload className="w-6 h-6" />, text: "Upload here" }
-                                ].map((step, index) => (
-                                    <li key={index} className="flex items-start">
-                                        <div className="flex-shrink-0 bg-indigo-100 bg-opacity-50 rounded-full p-2 mr-4">
-                                            {step.icon}
-                                        </div>
-                                        <p className="text-gray-800">{step.text}</p>
-                                    </li>
-                                ))}
-                            </ol>
-                        </div>
+
+                        <h3 className="text-base font-medium mb-3 text-indigo-700">To download a transaction summary:</h3>
+                        <ol className="text-sm space-y-2 text-gray-700 list-decimal list-inside">
+                            <li>Log into your online banking</li>
+                            <li>Select the account you want to download a CSV for</li>
+                            <li>Find a "view statements" or "view transaction history" tab and click on it</li>
+                            <li>Insert the date range we have asked you for</li>
+                            <li>Select the CSV option as the "Output" or "Format"</li>
+                            <li>Click "Export", "Save" or "Download" to save the file</li>
+                            <li>Upload the file using the button above</li>
+                        </ol>
                     </div>
                 )}
             </div>
