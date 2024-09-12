@@ -388,8 +388,10 @@ const SpendingDashboard: React.FC = () => {
                         </div>
                     )}
                 </div>
+                {/* <div className={`transition-all duration-500 ease-in-out ${csvUploaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}></div> */}
                 {csvUploaded ? (
-                    <>
+                    <div className="transition-all duration-500 ease-in-out opacity-0 translate-y-4 animate-fade-in-up">
+
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-8">
                             <div className="bg-white p-6 rounded-lg shadow-md">
                                 <div className="flex items-center justify-between mb-2">
@@ -641,7 +643,7 @@ const SpendingDashboard: React.FC = () => {
                                 </table>
                             </div>
                         </div>
-                    </>
+                    </div>
                 ) : (
                     <div className="bg-white bg-opacity-50 backdrop-filter backdrop-blur-sm shadow-lg rounded-xl overflow-hidden mt-8">
                         <div className="bg-indigo-600 bg-opacity-70 text-white p-6 backdrop-filter backdrop-blur-md">
