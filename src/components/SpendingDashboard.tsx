@@ -1,7 +1,8 @@
 import React, { useState, useCallback } from 'react';
 import { XAxis, YAxis, AreaChart, Area, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, BarChart, Bar } from 'recharts';
-import { Calendar, Sun, ShoppingBag, Upload, RefreshCw, TrendingUp, TrendingDown, DollarSign, ArrowUpDown, Plus, Sparkles, ChevronUp, ChevronDown } from 'lucide-react';
+import { Calendar, Sun, ShoppingBag, Upload, RefreshCw, TrendingUp, TrendingDown, DollarSign, ArrowUpDown, Plus, Sparkles, ChevronUp, ChevronDown, CreditCard, FileText, FileDown, Lock, Shield, Smartphone } from 'lucide-react';
 import Papa from 'papaparse';
+
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82ca9d', '#ffc658'];
 
@@ -368,7 +369,10 @@ const SpendingDashboard: React.FC = () => {
             <div className="max-w-7xl mx-auto">
                 <div className="mb-8">
                     <div className="flex justify-between items-center mb-4">
-                        <h1 className="text-3xl font-bold text-indigo-800">Spending Dashboard</h1>
+                        <h1 className="text-3xl font-bold text-indigo-800 flex items-center">
+                            Spending Dashboard
+                            <img src="assets/icon.png" alt="" className="w-10 h-10 ml-2" />
+                        </h1>
                         <label htmlFor="csv-upload" className="cursor-pointer bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg inline-flex items-center transition duration-200">
                             <Upload className="w-5 h-5 mr-2" />
                             <span>Upload CSV</span>
@@ -639,8 +643,54 @@ const SpendingDashboard: React.FC = () => {
                         </div>
                     </>
                 ) : (
-                    <div className="text-center mt-8">
-                        <p className="text-xl text-gray-600">Please upload a transaction summary CSV from your bank to view the spending dashboard.</p>
+                    <div className="bg-white bg-opacity-20 backdrop-filter backdrop-blur-lg shadow-lg rounded-lg overflow-hidden mt-8 border border-white border-opacity-50">
+                        <div className="bg-indigo-600 bg-opacity-70 text-white p-6 backdrop-filter backdrop-blur-md">
+                            <h2 className="text-2xl font-bold mb-2">Upload Your Transaction Summary</h2>
+                            <p className="text-indigo-100">
+                                Please upload a transaction summary CSV from your bank to view the spending dashboard.
+                            </p>
+                        </div>
+                        <div className="p-6">
+                            <div className="mb-6 bg-green-100 bg-opacity-70 rounded-lg p-4 backdrop-filter backdrop-blur-sm">
+                                <h4 className="text-lg font-semibold mb-2 flex items-center text-green-800">
+                                    <Shield className="w-6 h-6 mr-2 text-green-700" />
+                                    Your Privacy is Protected
+                                </h4>
+                                <ul className="space-y-2">
+                                    <li className="flex items-center">
+                                        <Lock className="w-5 h-5 mr-2 text-green-700" />
+                                        <span className="text-green-800">Your data remains entirely private and secure</span>
+                                    </li>
+                                    <li className="flex items-center">
+                                        <Smartphone className="w-5 h-5 mr-2 text-green-700" />
+                                        <span className="text-green-800">All processing happens on your device only</span>
+                                    </li>
+                                    <li className="flex items-center">
+                                        <FileText className="w-5 h-5 mr-2 text-green-700" />
+                                        <span className="text-green-800">No data is stored or transmitted elsewhere</span>
+                                    </li>
+                                </ul>
+                            </div>
+                            <h3 className="text-lg font-semibold mb-4 text-gray-800">To download a transaction summary:</h3>
+                            <ol className="space-y-4">
+                                {[
+                                    { icon: <CreditCard className="w-6 h-6" />, text: "Log into your online banking" },
+                                    { icon: <FileText className="w-6 h-6" />, text: "Select the account you want to download a CSV for" },
+                                    { icon: <FileText className="w-6 h-6" />, text: 'Find a "view statements" or "view transaction history" or similar tab and click on it' },
+                                    { icon: <Calendar className="w-6 h-6" />, text: "Insert the date range we have asked you for" },
+                                    { icon: <FileText className="w-6 h-6" />, text: 'Make sure you select the CSV option as the "Output" or "Format"' },
+                                    { icon: <FileDown className="w-6 h-6" />, text: 'Click "Export", "Save" or "Download" and the file will be saved to wherever your computer usually saves files' },
+                                    { icon: <Upload className="w-6 h-6" />, text: "Upload here" }
+                                ].map((step, index) => (
+                                    <li key={index} className="flex items-start">
+                                        <div className="flex-shrink-0 bg-indigo-100 bg-opacity-50 rounded-full p-2 mr-4">
+                                            {step.icon}
+                                        </div>
+                                        <p className="text-gray-800">{step.text}</p>
+                                    </li>
+                                ))}
+                            </ol>
+                        </div>
                     </div>
                 )}
             </div>
