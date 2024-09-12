@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { XAxis, YAxis, AreaChart, Area, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, BarChart, Bar } from 'recharts';
-import { Calendar, Sun, ShoppingBag, Upload, RefreshCw, TrendingUp, TrendingDown, DollarSign, ArrowUpDown, Plus, Sparkles, ChevronUp, ChevronDown, CreditCard, FileText, FileDown, Lock, Shield, Smartphone } from 'lucide-react';
+import { Calendar, Sun, ShoppingBag, Upload, RefreshCw, TrendingUp, TrendingDown, DollarSign, ArrowUpDown, Plus, Sparkles, ChevronUp, ChevronDown, FileText, Lock, Shield, Smartphone } from 'lucide-react';
 import Papa from 'papaparse';
 
 
