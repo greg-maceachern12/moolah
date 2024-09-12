@@ -643,7 +643,7 @@ const SpendingDashboard: React.FC = () => {
                         </div>
                     </>
                 ) : (
-                    <div className="bg-white bg-opacity-40 backdrop-filter backdrop-blur-lg shadow-lg rounded-lg overflow-hidden mt-8">
+                    <div className="bg-white bg-opacity-50 backdrop-filter backdrop-blur-sm shadow-lg rounded-xl overflow-hidden mt-8">
                         <div className="bg-indigo-600 bg-opacity-70 text-white p-6 backdrop-filter backdrop-blur-md">
                             <h2 className="text-2xl font-bold mb-2">Upload Your Transaction Summary</h2>
                             <p className="text-indigo-100">
