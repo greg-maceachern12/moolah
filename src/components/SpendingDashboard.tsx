@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { XAxis, YAxis, AreaChart, Area, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, BarChart, Bar } from 'recharts';
-import { Calendar, Sun, ShoppingBag, Upload, RefreshCw, TrendingUp, TrendingDown, DollarSign, ArrowUpDown } from 'lucide-react';
+import { Calendar, Sun, ShoppingBag, Upload, RefreshCw, TrendingUp, TrendingDown, DollarSign, ArrowUpDown, Plus, Sparkles } from 'lucide-react';
 import Papa from 'papaparse';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82ca9d', '#ffc658'];
@@ -23,6 +23,7 @@ const DateRangeDisplay: React.FC<{ startDate: Date | null; endDate: Date | null 
 const SpendingDashboard: React.FC = () => {
     const [startDate, setStartDate] = useState<Date | null>(null);
     const [endDate, setEndDate] = useState<Date | null>(null);
+    const [processedTransactions, setProcessedTransactions] = useState<Array<any>>([]);
     const [monthlySpending, setMonthlySpending] = useState<Array<{ date: string, amount: number }>>([]);
     const [categoryBreakdown, setCategoryBreakdown] = useState<Array<{ name: string, value: number }>>([]);
     const [totalSpent, setTotalSpent] = useState(0);
@@ -39,6 +40,8 @@ const SpendingDashboard: React.FC = () => {
     const [balanceTrend, setBalanceTrend] = useState<Array<{ date: string, balance: number }>>([]);
 
     const [csvUploaded, setCsvUploaded] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [aiInsights, setAiInsights] = useState<string | null>(null);
     const [hasCategoryData, setHasCategoryData] = useState(false);
 
     const processTransactions = (transactions: any[]) => {
@@ -283,16 +286,16 @@ const SpendingDashboard: React.FC = () => {
                         const processedTransactions = results.data
                             .slice(1) // Skip header row
                             .map(row => processCSVRow(row, detectedType))
-                            .filter((t): t is NonNullable<ReturnType<typeof processCSVRow>> => 
+                            .filter((t): t is NonNullable<ReturnType<typeof processCSVRow>> =>
                                 t !== null && !isNaN(t.amount) && t.amount !== 0 && !!t.date
                             );
 
                         console.log('Processed transactions:', processedTransactions);
-                        
+
                         // Check if any transaction has category data
                         const categoryDataExists = processedTransactions.some(t => t.category !== '');
                         setHasCategoryData(categoryDataExists);
-
+                        setProcessedTransactions(processedTransactions);
                         processTransactions(processedTransactions);
                         setCsvUploaded(true);
                     }
@@ -307,6 +310,50 @@ const SpendingDashboard: React.FC = () => {
         return `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     };
 
+
+    const handleAIInsightsClick = async () => {
+        setIsLoading(true);
+        setAiInsights(null);
+        console.log("Generating Insights from 4o")
+        try {
+            const response = await fetch('https://visuaicalls.azurewebsites.net/api/financialAnalyze?code=J9r5P9CUUcEm8JMARGizL1ynH84mwNkTxAU79Vv8nNVXAzFu7Xunhg%3D%3D', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ transactions: processedTransactions }),
+            });
+
+            if (!response.ok) {
+                throw new Error('API call failed');
+            }
+
+            const data = await response.json();
+            console.log('AI Insights Response:', data);
+            setAiInsights(data.response);
+        } catch (error) {
+            console.error('Error fetching AI insights:', error);
+            setAiInsights('Error fetching AI insights. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    const renderAIInsights = (insights: string) => {
+        const insightsList = insights.split('\n\n').filter(insight => insight.trim() !== '');
+        return (
+            <ol className="list-decimal list-outside space-y-4 text-gray-800 pl-5">
+                {insightsList.map((insight, index) => {
+                    const [title, ...content] = insight.split(':');
+                    return (
+                        <li key={index} className="leading-relaxed">
+                            <span className="font-bold">{title.replace(/^\d+\.\s*/, '').trim()}:</span>
+                            {content.join(':').trim()}
+                        </li>
+                    );
+                })}
+            </ol>
+        );
+    };
 
     return (
         <div className="min-h-screen p-4 bg-gradient-to-br from-blue-100 via-green-100 to-blue-200">
@@ -406,6 +453,39 @@ const SpendingDashboard: React.FC = () => {
                                 <p className="text-3xl font-bold text-green-600">
                                     {formatDollarAmount(totalIncome)}
                                 </p>
+                            </div>
+                        </div>
+
+                        
+                        {/* Updated AI Insights section */}
+                        <div className="mb-8">
+                            <div className="w-full bg-white bg-opacity-20 backdrop-filter backdrop-blur-sm p-8 rounded-3xl transition duration-300 ease-in-out">
+                                {!aiInsights ? (
+                                    <button
+                                        onClick={handleAIInsightsClick}
+                                        disabled={isLoading}
+                                        className="w-full flex flex-col items-center justify-center space-y-4 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        <div className="bg-indigo-100 bg-opacity-50 p-4 rounded-full">
+                                            {isLoading ? (
+                                                <RefreshCw className="w-12 h-12 text-indigo-500 animate-spin" />
+                                            ) : (
+                                                <Plus className="w-12 h-12 text-indigo-500" />
+                                            )}
+                                        </div>
+                                        <p className="text-xl font-semibold text-indigo-600 animate-pulse">
+                                            {isLoading ? 'Generating AI insights...' : 'Click to see AI insights'}
+                                        </p>
+                                    </button>
+                                ) : (
+                                    <div className="space-y-6">
+                                        <div className="flex items-center space-x-2 mb-4">
+                                            <h3 className="text-2xl font-bold text-indigo-700">AI Insights</h3>
+                                            <Sparkles className="w-6 h-6 text-yellow-500" />
+                                        </div>
+                                        {renderAIInsights(aiInsights)}
+                                    </div>
+                                )}
                             </div>
                         </div>
 
