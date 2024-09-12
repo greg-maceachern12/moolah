@@ -341,13 +341,21 @@ const SpendingDashboard: React.FC = () => {
     const renderAIInsights = (insights: string) => {
         const insightsList = insights.split('\n\n').filter(insight => insight.trim() !== '');
         return (
-            <ol className="list-decimal list-outside space-y-4 text-gray-800 pl-5">
+            <ol className="list-decimal list-outside space-y-6 text-gray-800 pl-5">
                 {insightsList.map((insight, index) => {
-                    const [title, ...content] = insight.split(':');
+                    const [title, ...contentParts] = insight.split(':');
+                    const content = contentParts.join(':').trim();
+                    const [mainContent, recommendation] = content.split('Recommendation:');
+
                     return (
                         <li key={index} className="leading-relaxed">
-                            <span className="font-bold">{title.replace(/^\d+\.\s*/, '').trim()}:</span>
-                            {content.join(':').trim()}
+                            <span className="font-bold">{title.replace(/^\d+\.\s*/, '').replace(/\*/g, '').trim()}:</span>
+                            {mainContent.trim()}
+                            {recommendation && (
+                                <ul className="list-disc pl-5 mt-2">
+                                    <li className="italic">Recommendation: {recommendation.trim()}</li>
+                                </ul>
+                            )}
                         </li>
                     );
                 })}
@@ -456,10 +464,10 @@ const SpendingDashboard: React.FC = () => {
                             </div>
                         </div>
 
-                        
+
                         {/* Updated AI Insights section */}
                         <div className="mb-8">
-                            <div className="w-full bg-white bg-opacity-20 backdrop-filter backdrop-blur-sm p-8 rounded-3xl transition duration-300 ease-in-out">
+                            <div className="w-full bg-white bg-opacity-50 backdrop-filter backdrop-blur-sm p-8 rounded-3xl transition duration-300 ease-in-out">
                                 {!aiInsights ? (
                                     <button
                                         onClick={handleAIInsightsClick}
