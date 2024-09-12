@@ -365,7 +365,7 @@ const SpendingDashboard: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen p-6 bg-gradient-to-br from-blue-100 via-green-100 to-blue-200">
+        <div className="min-h-screen p-6 bg-gradient-to-br from-blue-100 via-orange-100 to-blue-200">
             <div className="max-w-7xl mx-auto">
                 <div className="mb-8">
                     <div className="flex justify-between items-center mb-4">
@@ -474,7 +474,7 @@ const SpendingDashboard: React.FC = () => {
 
                         {/* Updated AI Insights section */}
                         <div className="mb-6">
-                            <div className="w-full bg-white bg-opacity-20 backdrop-filter backdrop-blur-sm p-4 rounded-xl transition duration-300 ease-in-out">
+                            <div className="w-full bg-white bg-opacity-50 backdrop-filter backdrop-blur-sm p-4 rounded-xl transition duration-300 ease-in-out">
                                 <div className="flex items-center justify-between mb-3">
                                     <div className="flex items-center space-x-2">
                                         <h3 className="text-xl font-bold text-indigo-700">AI Insights</h3>
@@ -643,7 +643,7 @@ const SpendingDashboard: React.FC = () => {
                         </div>
                     </>
                 ) : (
-                    <div className="bg-white bg-opacity-20 backdrop-filter backdrop-blur-lg shadow-lg rounded-lg overflow-hidden mt-8 border border-white border-opacity-50">
+                    <div className="bg-white bg-opacity-40 backdrop-filter backdrop-blur-lg shadow-lg rounded-lg overflow-hidden mt-8">
                         <div className="bg-indigo-600 bg-opacity-70 text-white p-6 backdrop-filter backdrop-blur-md">
                             <h2 className="text-2xl font-bold mb-2">Upload Your Transaction Summary</h2>
                             <p className="text-indigo-100">
