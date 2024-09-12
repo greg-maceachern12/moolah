@@ -1,24 +1,9 @@
 import React, { useState, useCallback } from 'react';
 import { XAxis, YAxis, AreaChart, Area, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, BarChart, Bar } from 'recharts';
-import { Calendar, Sun, ShoppingBag, Upload, RefreshCw, TrendingUp, TrendingDown, DollarSign, ArrowUpDown, Plus, Sparkles } from 'lucide-react';
+import { Calendar, Sun, ShoppingBag, Upload, RefreshCw, TrendingUp, TrendingDown, DollarSign, ArrowUpDown, Plus, Sparkles, ChevronUp, ChevronDown } from 'lucide-react';
 import Papa from 'papaparse';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82ca9d', '#ffc658'];
-
-const DateRangeDisplay: React.FC<{ startDate: Date | null; endDate: Date | null }> = ({ startDate, endDate }) => {
-    if (!startDate || !endDate) return null;
-
-    const formatDate = (date: Date) => date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-
-    return (
-        <div className="p-4">
-            {/* <h2 className="text-lg font-semibold mb-2">Transaction Date Range</h2> */}
-            <p className="text-gray-600">
-                From {formatDate(startDate)} to {formatDate(endDate)}
-            </p>
-        </div>
-    );
-};
 
 const SpendingDashboard: React.FC = () => {
     const [startDate, setStartDate] = useState<Date | null>(null);
@@ -42,6 +27,7 @@ const SpendingDashboard: React.FC = () => {
     const [csvUploaded, setCsvUploaded] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [aiInsights, setAiInsights] = useState<string | null>(null);
+    const [isAIInsightsExpanded, setIsAIInsightsExpanded] = useState(true);
     const [hasCategoryData, setHasCategoryData] = useState(false);
 
     const processTransactions = (transactions: any[]) => {
@@ -202,6 +188,10 @@ const SpendingDashboard: React.FC = () => {
     const toggleChangeMetric = () => {
         setShowYearOverYear(!showYearOverYear);
     };
+    const toggleAIInsights = () => {
+        setIsAIInsightsExpanded(!isAIInsightsExpanded);
+    };
+
 
 
     const detectCSVType = (headers: string[]): 'AMEX' | 'Chase' | 'Capital One' | 'Unknown' => {
@@ -338,23 +328,33 @@ const SpendingDashboard: React.FC = () => {
             setIsLoading(false);
         }
     };
+
+
     const renderAIInsights = (insights: string) => {
         const insightsList = insights.split('\n\n').filter(insight => insight.trim() !== '');
         return (
-            <ol className="list-decimal list-outside space-y-6 text-gray-800 pl-5">
+            <ol className="list-none space-y-4 text-base text-gray-800">
                 {insightsList.map((insight, index) => {
                     const [title, ...contentParts] = insight.split(':');
                     const content = contentParts.join(':').trim();
-                    const [mainContent, recommendation] = content.split('Recommendation:');
+                    const [mainContent, recommendation] = content.split('**Recommendation**:');
 
                     return (
-                        <li key={index} className="leading-relaxed">
-                            <span className="font-bold">{title.replace(/^\d+\.\s*/, '').replace(/\*/g, '').trim()}:</span>
-                            {mainContent.trim()}
+                        <li key={index} className="bg-white bg-opacity-40 rounded p-4">
+                            <div className="flex items-start mb-2">
+                                <span className="flex-shrink-0 w-6 h-6 bg-indigo-500 text-white rounded-full flex items-center justify-center font-bold text-sm">
+                                    {index + 1}
+                                </span>
+                                <h4 className="ml-3 text-base font-semibold text-indigo-700">
+                                    {title.replace(/^\d+\.\s*/, '').replace(/\*/g, '').trim()}
+                                </h4>
+                            </div>
+                            <p className="text-sm text-gray-600 ml-9 mb-2">{mainContent.trim()}</p>
                             {recommendation && (
-                                <ul className="list-disc pl-5 mt-2">
-                                    <li className="italic">Recommendation: {recommendation.trim()}</li>
-                                </ul>
+                                <div className="bg-indigo-50 rounded p-3 ml-9 mt-2">
+                                    <p className="text-sm font-medium text-indigo-800">Recommendation:</p>
+                                    <p className="text-sm italic text-indigo-600">{recommendation.trim()}</p>
+                                </div>
                             )}
                         </li>
                     );
@@ -364,25 +364,28 @@ const SpendingDashboard: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen p-4 bg-gradient-to-br from-blue-100 via-green-100 to-blue-200">
+        <div className="min-h-screen p-6 bg-gradient-to-br from-blue-100 via-green-100 to-blue-200">
             <div className="max-w-7xl mx-auto">
-                <div className="flex items-center mb-4">
-                    {/* <img src="../assets/icon.png" alt="Dashboard icon" className="w-8 h-8 mr-2" /> */}
-                    <h1 className="text-2xl font-bold text-gray-800">Spending Dashboard</h1>
+                <div className="mb-8">
+                    <div className="flex justify-between items-center mb-4">
+                        <h1 className="text-3xl font-bold text-indigo-800">Spending Dashboard</h1>
+                        <label htmlFor="csv-upload" className="cursor-pointer bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg inline-flex items-center transition duration-200">
+                            <Upload className="w-5 h-5 mr-2" />
+                            <span>Upload CSV</span>
+                        </label>
+                        <input id="csv-upload" type="file" accept=".csv" onChange={handleFileUpload} className="hidden" />
+                    </div>
+                    {startDate && endDate && (
+                        <div className="text-sm text-gray-600 flex items-center">
+                            <Calendar className="w-4 h-4 mr-2 text-indigo-500" />
+                            <span>
+                                From {startDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })} to {endDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                            </span>
+                        </div>
+                    )}
                 </div>
-
-                <div className="mb-4">
-                    <label htmlFor="csv-upload" className="cursor-pointer bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded inline-flex items-center transition duration-200">
-                        <Upload className="w-4 h-4 mr-2" />
-                        <span>Upload CSV</span>
-                    </label>
-                    <input id="csv-upload" type="file" accept=".csv" onChange={handleFileUpload} className="hidden" />
-                </div>
-
                 {csvUploaded ? (
                     <>
-
-                        <DateRangeDisplay startDate={startDate} endDate={endDate} />
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-8">
                             <div className="bg-white p-6 rounded-lg shadow-md">
                                 <div className="flex items-center justify-between mb-2">
@@ -466,33 +469,47 @@ const SpendingDashboard: React.FC = () => {
 
 
                         {/* Updated AI Insights section */}
-                        <div className="mb-8">
-                            <div className="w-full bg-white bg-opacity-50 backdrop-filter backdrop-blur-sm p-8 rounded-3xl transition duration-300 ease-in-out">
-                                {!aiInsights ? (
-                                    <button
-                                        onClick={handleAIInsightsClick}
-                                        disabled={isLoading}
-                                        className="w-full flex flex-col items-center justify-center space-y-4 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        <div className="bg-indigo-100 bg-opacity-50 p-4 rounded-full">
-                                            {isLoading ? (
-                                                <RefreshCw className="w-12 h-12 text-indigo-500 animate-spin" />
-                                            ) : (
-                                                <Plus className="w-12 h-12 text-indigo-500" />
-                                            )}
-                                        </div>
-                                        <p className="text-xl font-semibold text-indigo-600 animate-pulse">
-                                            {isLoading ? 'Generating AI insights...' : 'Click to see AI insights'}
-                                        </p>
-                                    </button>
-                                ) : (
-                                    <div className="space-y-6">
-                                        <div className="flex items-center space-x-2 mb-4">
-                                            <h3 className="text-2xl font-bold text-indigo-700">AI Insights</h3>
-                                            <Sparkles className="w-6 h-6 text-yellow-500" />
-                                        </div>
-                                        {renderAIInsights(aiInsights)}
+                        <div className="mb-6">
+                            <div className="w-full bg-white bg-opacity-20 backdrop-filter backdrop-blur-sm p-4 rounded-xl transition duration-300 ease-in-out">
+                                <div className="flex items-center justify-between mb-3">
+                                    <div className="flex items-center space-x-2">
+                                        <h3 className="text-xl font-bold text-indigo-700">AI Insights</h3>
+                                        <Sparkles className="w-5 h-5 text-yellow-500" />
                                     </div>
+                                    <button
+                                        onClick={toggleAIInsights}
+                                        className="text-indigo-600 hover:text-indigo-800 transition-colors duration-200"
+                                    >
+                                        {isAIInsightsExpanded ? (
+                                            <ChevronUp className="w-6 h-6" />
+                                        ) : (
+                                            <ChevronDown className="w-6 h-6" />
+                                        )}
+                                    </button>
+                                </div>
+                                {isAIInsightsExpanded && (
+                                    <>
+                                        {!aiInsights ? (
+                                            <button
+                                                onClick={handleAIInsightsClick}
+                                                disabled={isLoading}
+                                                className="w-full flex flex-col items-center justify-center space-y-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                <div className="bg-indigo-100 bg-opacity-50 p-2 rounded-full">
+                                                    {isLoading ? (
+                                                        <RefreshCw className="w-8 h-8 text-indigo-500 animate-spin" />
+                                                    ) : (
+                                                        <Plus className="w-8 h-8 text-indigo-500" />
+                                                    )}
+                                                </div>
+                                                <p className="text-base font-semibold text-indigo-600 animate-pulse">
+                                                    {isLoading ? 'Generating AI insights...' : 'Click to see AI insights'}
+                                                </p>
+                                            </button>
+                                        ) : (
+                                            renderAIInsights(aiInsights)
+                                        )}
+                                    </>
                                 )}
                             </div>
                         </div>
