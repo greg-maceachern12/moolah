@@ -392,7 +392,7 @@ const SpendingDashboard: React.FC = () => {
                 </div>
                 {/* <div className={`transition-all duration-500 ease-in-out ${csvUploaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}></div> */}
                 {csvUploaded ? (
-                    <div className="transition-all duration-500 ease-in-out opacity-0 translate-y-4 animate-fade-in-up">
+                    <div className="space-y-8 animate-fade-in">
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-8">
                             <div className="bg-white p-6 rounded-lg shadow-md">
@@ -665,11 +665,11 @@ const SpendingDashboard: React.FC = () => {
                                 </li>
                                 <li className="flex items-center">
                                     <Smartphone className="w-3 h-3 mr-1 text-green-600" />
-                                    <span>All processing happens on your device only</span>
+                                    <span>All processing of data is private and not shared with anyone</span>
                                 </li>
                                 <li className="flex items-center">
                                     <FileText className="w-3 h-3 mr-1 text-green-600" />
-                                    <span>No data is stored or transmitted elsewhere</span>
+                                    <span>No data is stored on any device</span>
                                 </li>
                             </ul>
                         </div>
