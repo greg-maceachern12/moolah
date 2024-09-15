@@ -741,15 +741,8 @@ const SpendingDashboard: React.FC = () => {
                         className="flex items-center space-x-2 max-w-md mx-auto"
                         data-netlify="true"
                         name="feedback"
-                        netlify-honeypot="bot-field"
                         method="POST"
                     >
-                        <input type="hidden" name="form-name" value="feedback" />
-                        <p className="hidden">
-                            <label>
-                                Don't fill this out if you're human: <input name="bot-field" />
-                            </label>
-                        </p>
                         <input
                             type="text"
                             name="message"
