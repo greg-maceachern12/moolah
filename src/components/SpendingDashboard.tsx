@@ -1,7 +1,8 @@
 import React, { useState, useCallback } from 'react';
 import { XAxis, YAxis, AreaChart, Area, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, BarChart, Bar } from 'recharts';
-import { Calendar, Sun, ShoppingBag, Upload, RefreshCw, TrendingUp, TrendingDown, DollarSign, ArrowUpDown, Plus, Sparkles, ChevronUp, ChevronDown, FileText, Lock, Shield, Smartphone } from 'lucide-react';
+import { Calendar, Sun, ShoppingBag, Upload, RefreshCw, TrendingUp, TrendingDown, DollarSign, ArrowUpDown, Plus, Sparkles, FileText, Lock, Shield, Smartphone, Star, Send } from 'lucide-react';
 import Papa from 'papaparse';
+import CollapsibleSection from './CollapsibleSection';
 
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82ca9d', '#ffc658'];
@@ -28,10 +29,12 @@ const SpendingDashboard: React.FC = () => {
     const [csvUploaded, setCsvUploaded] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [aiInsights, setAiInsights] = useState<string | null>(null);
-    const [isAIInsightsExpanded, setIsAIInsightsExpanded] = useState(true);
     const [hasCategoryData, setHasCategoryData] = useState(false);
 
-    const processTransactions = (transactions: any[]) => {
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [selectedFileCount, setSelectedFileCount] = useState(0);
+
+    const processTransactions = useCallback((transactions: any[]) => {
         let totalSpent = 0;
         let totalIncome = 0;
         const merchantTotals: { [key: string]: number } = {};
@@ -184,15 +187,11 @@ const SpendingDashboard: React.FC = () => {
             });
         setBalanceTrend(balanceTrendData);
 
-    };
+    }, []);
 
     const toggleChangeMetric = () => {
         setShowYearOverYear(!showYearOverYear);
     };
-    const toggleAIInsights = () => {
-        setIsAIInsightsExpanded(!isAIInsightsExpanded);
-    };
-
 
 
     const detectCSVType = (headers: string[]): 'AMEX' | 'Chase' | 'Capital One' | 'Unknown' => {
@@ -225,7 +224,7 @@ const SpendingDashboard: React.FC = () => {
             case 'AMEX':
                 date = new Date(row['Date']);
                 description = row['Description'];
-                category = ''; // AMEX doesn't provide category
+                category = row['Category'] || '';; // AMEX doesn't provide category
                 amount = -parseFloat(row['Amount']); // Negate amount as AMEX considers spending as positive
                 break;
             case 'Chase':
@@ -259,43 +258,59 @@ const SpendingDashboard: React.FC = () => {
     };
 
 
-    const handleFileUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (file) {
-            Papa.parse(file, {
-                complete: (results) => {
-                    if (Array.isArray(results.data) && results.data.length > 0) {
-                        const headers = Object.keys(results.data[0]);
-                        const detectedType = detectCSVType(headers);
+    const processFiles = useCallback(async (files: File[]) => {
+        if (files.length === 0) return;
 
-                        if (detectedType === 'Unknown') {
-                            console.error('Unknown CSV format');
-                            // You might want to show an error message to the user here
-                            return;
-                        }
+        setIsProcessing(true);
+        const allTransactions: any[] = [];
 
-                        const processedTransactions = results.data
-                            .slice(1) // Skip header row
-                            .map(row => processCSVRow(row, detectedType))
-                            .filter((t): t is NonNullable<ReturnType<typeof processCSVRow>> =>
-                                t !== null && !isNaN(t.amount) && t.amount !== 0 && !!t.date
-                            );
-
-                        console.log('Processed transactions:', processedTransactions);
-
-                        // Check if any transaction has category data
-                        const categoryDataExists = processedTransactions.some(t => t.category !== '');
-                        setHasCategoryData(categoryDataExists);
-                        setProcessedTransactions(processedTransactions);
-                        processTransactions(processedTransactions);
-                        setCsvUploaded(true);
-                    }
-                },
-                header: true,
-                skipEmptyLines: true,
+        for (const file of files) {
+            const results = await new Promise<Papa.ParseResult<any>>((resolve) => {
+                Papa.parse(file, {
+                    complete: resolve,
+                    header: true,
+                    skipEmptyLines: true,
+                });
             });
+
+            if (Array.isArray(results.data) && results.data.length > 0) {
+                const headers = Object.keys(results.data[0]);
+                const detectedType = detectCSVType(headers);
+
+                if (detectedType === 'Unknown') {
+                    console.error('Unknown CSV format');
+                    continue;
+                }
+
+                const processedTransactions = results.data
+                    .slice(1) // Skip header row
+                    .map(row => processCSVRow(row, detectedType))
+                    .filter((t): t is NonNullable<ReturnType<typeof processCSVRow>> =>
+                        t !== null && !isNaN(t.amount) && t.amount !== 0 && !!t.date
+                    );
+
+                allTransactions.push(...processedTransactions);
+            }
         }
-    }, []);
+
+        console.log('Processed transactions:', allTransactions);
+
+        // Check if any transaction has category data
+        const categoryDataExists = allTransactions.some(t => t.category !== '');
+        setHasCategoryData(categoryDataExists);
+        setProcessedTransactions(allTransactions);
+        processTransactions(allTransactions);
+        setCsvUploaded(true);
+        setIsProcessing(false);
+    }, [processTransactions]); // Add processTransactions to the dependency array
+
+    const handleFileUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+        const files = event.target.files;
+        if (files) {
+            setSelectedFileCount(files.length);
+            processFiles(Array.from(files));
+        }
+    }, [processFiles]); // Add processFiles to the dependency array
 
     const formatDollarAmount = (amount: number) => {
         return `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -371,18 +386,34 @@ const SpendingDashboard: React.FC = () => {
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 space-y-4 sm:space-y-0">
                         <div className="flex items-center">
                             <h1 className="text-2xl sm:text-3xl font-bold text-indigo-800 flex items-center">
-                                Spending Dashboard
+                                Transaction Dashboard
                                 <img src="assets/icon.png" alt="" className="w-10 h-10 ml-2" />
                             </h1>
                         </div>
-                        <label htmlFor="csv-upload" className="cursor-pointer bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg inline-flex items-center transition duration-200">
-                            <Upload className="w-5 h-5 mr-2" />
-                            <span>Upload CSV</span>
-                        </label>
-                        <input id="csv-upload" type="file" accept=".csv" onChange={handleFileUpload} className="hidden" />
+                        <div>
+                            <label htmlFor="csv-upload" className="cursor-pointer bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg inline-flex items-center transition duration-200">
+                                <Upload className="w-5 h-5 mr-2" />
+                                <span>{isProcessing ? 'Processing...' : 'Upload CSV(s)'}</span>
+                            </label>
+                            <input
+                                id="csv-upload"
+                                type="file"
+                                accept=".csv"
+                                onChange={handleFileUpload}
+                                className="hidden"
+                                multiple
+                                disabled={isProcessing}
+                            />
+                        </div>
                     </div>
+                    {selectedFileCount > 0 && (
+                        <div className="text-sm text-gray-600 flex items-center mt-2">
+                            <FileText className="w-4 h-4 mr-2 text-indigo-500" />
+                            <span>{selectedFileCount} file(s) selected</span>
+                        </div>
+                    )}
                     {startDate && endDate && (
-                        <div className="text-sm text-gray-600 flex items-center">
+                        <div className="text-sm text-gray-600 flex items-center mt-2">
                             <Calendar className="w-4 h-4 mr-2 text-indigo-500" />
                             <span>
                                 From {startDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })} to {endDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
@@ -390,6 +421,7 @@ const SpendingDashboard: React.FC = () => {
                         </div>
                     )}
                 </div>
+
                 {/* <div className={`transition-all duration-500 ease-in-out ${csvUploaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}></div> */}
                 {csvUploaded ? (
                     <div className="space-y-8 animate-fade-in">
@@ -478,8 +510,8 @@ const SpendingDashboard: React.FC = () => {
 
                         {/* Updated AI Insights section */}
                         <div className="mb-6">
-                            <div className="w-full bg-white bg-opacity-50 backdrop-filter backdrop-blur-sm p-4 rounded-xl transition duration-300 ease-in-out">
-                                <div className="flex items-center justify-between mb-3">
+                            {/* <div className="w-full bg-white bg-opacity-50 backdrop-filter backdrop-blur-sm p-4 rounded-xl transition duration-300 ease-in-out"> */}
+                            {/* <div className="flex items-center justify-between mb-3">
                                     <div className="flex items-center space-x-2">
                                         <h3 className="text-xl font-bold text-indigo-700">AI Insights</h3>
                                         <Sparkles className="w-5 h-5 text-yellow-500" />
@@ -494,32 +526,34 @@ const SpendingDashboard: React.FC = () => {
                                             <ChevronDown className="w-6 h-6" />
                                         )}
                                     </button>
-                                </div>
-                                {isAIInsightsExpanded && (
-                                    <>
-                                        {!aiInsights ? (
-                                            <button
-                                                onClick={handleAIInsightsClick}
-                                                disabled={isLoading}
-                                                className="w-full flex flex-col items-center justify-center space-y-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                                            >
-                                                <div className="bg-indigo-100 bg-opacity-50 p-2 rounded-full">
-                                                    {isLoading ? (
-                                                        <RefreshCw className="w-8 h-8 text-indigo-500 animate-spin" />
-                                                    ) : (
-                                                        <Plus className="w-8 h-8 text-indigo-500" />
-                                                    )}
-                                                </div>
-                                                <p className="text-base font-semibold text-indigo-600 animate-pulse">
-                                                    {isLoading ? 'Generating AI insights...' : 'Click to see AI insights'}
-                                                </p>
-                                            </button>
-                                        ) : (
-                                            renderAIInsights(aiInsights)
-                                        )}
-                                    </>
+                                </div> */}
+                            <CollapsibleSection
+                                title="AI Insights"
+                                defaultExpanded={true}
+                                icon={<Sparkles className="w-5 h-5 text-yellow-500" />}
+                            >
+                                {!aiInsights ? (
+                                    <button
+                                        onClick={handleAIInsightsClick}
+                                        disabled={isLoading}
+                                        className="w-full flex flex-col items-center justify-center space-y-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        <div className="bg-indigo-100 bg-opacity-50 p-2 rounded-full">
+                                            {isLoading ? (
+                                                <RefreshCw className="w-8 h-8 text-indigo-500 animate-spin" />
+                                            ) : (
+                                                <Plus className="w-8 h-8 text-indigo-500" />
+                                            )}
+                                        </div>
+                                        <p className="text-base font-semibold text-indigo-600 animate-pulse">
+                                            {isLoading ? 'Generating AI insights...' : 'Click to see AI insights'}
+                                        </p>
+                                    </button>
+                                ) : (
+                                    renderAIInsights(aiInsights)
                                 )}
-                            </div>
+                            </CollapsibleSection>
+                            {/* </div> */}
                         </div>
 
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
@@ -647,47 +681,91 @@ const SpendingDashboard: React.FC = () => {
                         </div>
                     </div>
                 ) : (
-                    <div className="bg-white bg-opacity-40 backdrop-filter backdrop-blur-lg shadow-lg rounded-lg overflow-hidden mt-6 p-5">
-                        <h2 className="text-xl font-bold mb-3 text-indigo-800">Upload Your Transaction Summary</h2>
-                        <p className="text-sm text-gray-700 mb-4">
-                            Please upload a transaction summary CSV from your bank to view the spending dashboard.
-                        </p>
+                    <>
+                        <div className="bg-white bg-opacity-40 backdrop-filter backdrop-blur-lg shadow-lg rounded-lg overflow-hidden mt-6 p-5">
+                            <h2 className="text-xl font-bold mb-3 text-indigo-800">Upload Your Transaction Summary(s)</h2>
+                            <p className="text-sm text-gray-700 mb-4">
+                                Please upload a transaction summary CSV from your bank to view the spending dashboard.
+                            </p>
 
-                        <div className="mb-4 bg-green-100 bg-opacity-50 rounded-lg p-3">
-                            <h4 className="text-md font-semibold mb-2 flex items-center text-green-800">
-                                <Shield className="w-4 h-4 mr-2 text-green-600" />
-                                Your Privacy is Protected
-                            </h4>
-                            <ul className="text-sm space-y-1 text-green-700">
-                                <li className="flex items-center">
-                                    <Lock className="w-3 h-3 mr-1 text-green-600" />
-                                    <span>Your data remains entirely private and secure</span>
-                                </li>
-                                <li className="flex items-center">
-                                    <Smartphone className="w-3 h-3 mr-1 text-green-600" />
-                                    <span>All processing of data is private and not shared with anyone</span>
-                                </li>
-                                <li className="flex items-center">
-                                    <FileText className="w-3 h-3 mr-1 text-green-600" />
-                                    <span>No data is stored on any device</span>
-                                </li>
+                            <div className="mb-4 bg-green-100 bg-opacity-50 rounded-lg p-3">
+                                <h4 className="text-md font-semibold mb-2 flex items-center text-green-800">
+                                    <Shield className="w-4 h-4 mr-2 text-green-600" />
+                                    Your Privacy is Protected
+                                </h4>
+                                <ul className="text-sm space-y-1 text-green-700">
+                                    <li className="flex items-center">
+                                        <Lock className="w-3 h-3 mr-1 text-green-600" />
+                                        <span>Your data remains entirely private and secure</span>
+                                    </li>
+                                    <li className="flex items-center">
+                                        <Smartphone className="w-3 h-3 mr-1 text-green-600" />
+                                        <span>All processing of data is private and not shared with anyone</span>
+                                    </li>
+                                    <li className="flex items-center">
+                                        <FileText className="w-3 h-3 mr-1 text-green-600" />
+                                        <span>No data is stored on any device</span>
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <CollapsibleSection title="How to Download Your Transaction Summary">
+                                <ol className="text-sm space-y-2 text-gray-700 list-decimal list-inside">
+                                    <li>Log into your online banking</li>
+                                    <li>Select the account you want to download a CSV for</li>
+                                    <li>Find a "view statements" or "view transaction history" tab and click on it</li>
+                                    <li>Insert the date range we have asked you for</li>
+                                    <li>Select the CSV option as the "Output" or "Format"</li>
+                                    <li>Click "Export", "Save" or "Download" to save the file</li>
+                                    <li>Upload the file using the button above</li>
+                                </ol>
+                            </CollapsibleSection>
+                        </div>
+                        {/* New static What's New box */}
+                        <div className="mt-4 bg-yellow-100 bg-opacity-50 rounded-lg p-4">
+                            <div className="flex items-center space-x-2 mb-2">
+                                <Star className="w-5 h-5 text-yellow-500" />
+                                <h3 className="text-lg font-semibold text-indigo-700">What's New</h3>
+                            </div>
+                            <ul className="text-sm space-y-2 text-gray-700 list-disc list-inside">
+                                <li>Support for multiple CSV uploads</li>
+                                <li>Enhanced AI insights</li>
+                                <li>Improved category detection</li>
+                                <li>New balance trend chart</li>
                             </ul>
                         </div>
-
-                        <h3 className="text-base font-medium mb-3 text-indigo-700">To download a transaction summary:</h3>
-                        <ol className="text-sm space-y-2 text-gray-700 list-decimal list-inside">
-                            <li>Log into your online banking</li>
-                            <li>Select the account you want to download a CSV for</li>
-                            <li>Find a "view statements" or "view transaction history" tab and click on it</li>
-                            <li>Insert the date range we have asked you for</li>
-                            <li>Select the CSV option as the "Output" or "Format"</li>
-                            <li>Click "Export", "Save" or "Download" to save the file</li>
-                            <li>Upload the file using the button above</li>
-                        </ol>
-                    </div>
+                    </>
                 )}
+                <div className="mt-8">
+                    <form
+                        className="flex items-center space-x-2 max-w-md mx-auto"
+                        data-netlify="true"
+                        name="feedback"
+                        netlify-honeypot="bot-field"
+                        method="POST"
+                    >
+                        <input type="hidden" name="form-name" value="feedback" />
+                        <p className="hidden">
+                            <label>
+                                Don't fill this out if you're human: <input name="bot-field" />
+                            </label>
+                        </p>
+                        <input
+                            type="text"
+                            name="message"
+                            placeholder="Send us your feedback..."
+                            className="flex-grow px-4 py-2 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        />
+                        <button
+                            type="submit"
+                            className="bg-indigo-500 text-white rounded-full p-2 hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                        >
+                            <Send className="w-5 h-5" />
+                        </button>
+                    </form>
+                </div>
             </div>
-        </div>
+        </div >
     );
 };
 
