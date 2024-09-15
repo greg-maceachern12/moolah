@@ -743,6 +743,7 @@ const SpendingDashboard: React.FC = () => {
                         name="feedback"
                         method="POST"
                     >
+                        <input type="hidden" name="form-name" value="feedback" />
                         <input
                             type="text"
                             name="message"
