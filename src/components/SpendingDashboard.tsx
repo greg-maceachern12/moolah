@@ -510,23 +510,6 @@ const SpendingDashboard: React.FC = () => {
 
                         {/* Updated AI Insights section */}
                         <div className="mb-6">
-                            {/* <div className="w-full bg-white bg-opacity-50 backdrop-filter backdrop-blur-sm p-4 rounded-xl transition duration-300 ease-in-out"> */}
-                            {/* <div className="flex items-center justify-between mb-3">
-                                    <div className="flex items-center space-x-2">
-                                        <h3 className="text-xl font-bold text-indigo-700">AI Insights</h3>
-                                        <Sparkles className="w-5 h-5 text-yellow-500" />
-                                    </div>
-                                    <button
-                                        onClick={toggleAIInsights}
-                                        className="text-indigo-600 hover:text-indigo-800 transition-colors duration-200"
-                                    >
-                                        {isAIInsightsExpanded ? (
-                                            <ChevronUp className="w-6 h-6" />
-                                        ) : (
-                                            <ChevronDown className="w-6 h-6" />
-                                        )}
-                                    </button>
-                                </div> */}
                             <CollapsibleSection
                                 title="AI Insights"
                                 defaultExpanded={true}
