@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { XAxis, YAxis, AreaChart, Area, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, BarChart, Bar } from 'recharts';
-import { Calendar, Sun, ShoppingBag, Upload, RefreshCw, TrendingUp, TrendingDown, DollarSign, ArrowUpDown, Plus, Sparkles, FileText, Lock, Shield, Smartphone, Star, Send } from 'lucide-react';
+import { Calendar, Sun, ShoppingBag, Upload, RefreshCw, TrendingUp, TrendingDown, DollarSign, ArrowUpDown, Plus, Sparkles, FileText, Lock, Shield, Smartphone, Star, MessageCircle } from 'lucide-react';
 import Papa from 'papaparse';
 import CollapsibleSection from './CollapsibleSection';
 
@@ -682,6 +682,19 @@ const SpendingDashboard: React.FC = () => {
                     </div>
                 ) : (
                     <>
+                        {/* New static What's New box */}
+                        <div className="mt-4 bg-yellow-100 bg-opacity-50 rounded-l p-4">
+                            <div className="flex items-center space-x-2 mb-2">
+                                <Star className="w-5 h-5 text-yellow-500" />
+                                <h3 className="text-lg font-semibold text-indigo-700">What's New</h3>
+                            </div>
+                            <ul className="text-sm space-y-2 text-gray-700 list-disc list-inside">
+                                <li>Support for multiple CSV uploads</li>
+                                <li>Enhanced AI insights</li>
+                                <li>Improved category detection</li>
+                                <li>New balance trend chart</li>
+                            </ul>
+                        </div>
                         <div className="bg-white bg-opacity-40 backdrop-filter backdrop-blur-lg shadow-lg rounded-lg overflow-hidden mt-6 p-5">
                             <h2 className="text-xl font-bold mb-3 text-indigo-800">Upload Your Transaction Summary(s)</h2>
                             <p className="text-sm text-gray-700 mb-4">
@@ -721,40 +734,30 @@ const SpendingDashboard: React.FC = () => {
                                 </ol>
                             </CollapsibleSection>
                         </div>
-                        {/* New static What's New box */}
-                        <div className="mt-4 bg-yellow-100 bg-opacity-50 rounded-lg p-4">
-                            <div className="flex items-center space-x-2 mb-2">
-                                <Star className="w-5 h-5 text-yellow-500" />
-                                <h3 className="text-lg font-semibold text-indigo-700">What's New</h3>
-                            </div>
-                            <ul className="text-sm space-y-2 text-gray-700 list-disc list-inside">
-                                <li>Support for multiple CSV uploads</li>
-                                <li>Enhanced AI insights</li>
-                                <li>Improved category detection</li>
-                                <li>New balance trend chart</li>
-                            </ul>
-                        </div>
                     </>
                 )}
-                <div className="mt-8">
+
+                {/* Improved Feedback form at the bottom */}
+                <div className="mt-8 flex justify-center">
                     <form
-                        className="flex items-center space-x-2 max-w-md mx-auto"
+                        className="bg-white bg-opacity-50 backdrop-filter backdrop-blur-sm rounded-lg shadow-md p-4 flex items-center space-x-2 w-full max-w-md"
                         data-netlify="true"
                         name="feedback"
                         method="POST"
                     >
                         <input type="hidden" name="form-name" value="feedback" />
+                        <MessageCircle className="w-5 h-5 text-indigo-500 flex-shrink-0" />
                         <input
                             type="text"
                             name="message"
-                            placeholder="Send us your feedback..."
-                            className="flex-grow px-4 py-2 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                            placeholder="Have feedback? Let us know!"
+                            className="flex-grow bg-transparent border-none focus:outline-none focus:ring-0 text-sm text-gray-700 placeholder-gray-500"
                         />
                         <button
                             type="submit"
-                            className="bg-indigo-500 text-white rounded-full p-2 hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                            className="bg-indigo-500 text-white rounded-md px-3 py-1 text-sm font-medium hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                         >
-                            <Send className="w-5 h-5" />
+                            Send
                         </button>
                     </form>
                 </div>
