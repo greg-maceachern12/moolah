@@ -386,7 +386,7 @@ const SpendingDashboard: React.FC = () => {
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 space-y-4 sm:space-y-0">
                         <div className="flex items-center">
                             <h1 className="text-2xl sm:text-3xl font-bold text-indigo-800 flex items-center">
-                                Transaction Dashboard
+                                Spending Report
                                 <img src="assets/icon.png" alt="" className="w-10 h-10 ml-2" />
                             </h1>
                         </div>
