@@ -1,11 +1,16 @@
 import React, { useState, useCallback } from 'react';
-import { XAxis, YAxis, AreaChart, Area, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, BarChart, Bar } from 'recharts';
+import { XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, BarChart, Bar } from 'recharts';
 import { Calendar, Sun, ShoppingBag, Upload, RefreshCw, TrendingUp, TrendingDown, DollarSign, ArrowUpDown, Plus, Sparkles, FileText, Lock, Shield, Smartphone, Star, MessageCircle } from 'lucide-react';
 import Papa from 'papaparse';
 import CollapsibleSection from './CollapsibleSection';
 
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82ca9d', '#ffc658'];
+
+interface CategoryTrendItem {
+    date: string;
+    [category: string]: string | number;
+}
 
 const SpendingDashboard: React.FC = () => {
     const [startDate, setStartDate] = useState<Date | null>(null);
@@ -24,7 +29,6 @@ const SpendingDashboard: React.FC = () => {
     const [monthOverMonthChange, setMonthOverMonthChange] = useState(0);
     const [yearOverYearChange, setYearOverYearChange] = useState(0);
     const [showYearOverYear, setShowYearOverYear] = useState(false);
-    const [balanceTrend, setBalanceTrend] = useState<Array<{ date: string, balance: number }>>([]);
 
     const [csvUploaded, setCsvUploaded] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -33,6 +37,9 @@ const SpendingDashboard: React.FC = () => {
 
     const [isProcessing, setIsProcessing] = useState(false);
     const [selectedFileCount, setSelectedFileCount] = useState(0);
+
+    const [categoryTrendData, setCategoryTrendData] = useState<CategoryTrendItem[]>([]);
+
 
     const processTransactions = useCallback((transactions: any[]) => {
         let totalSpent = 0;
@@ -142,8 +149,8 @@ const SpendingDashboard: React.FC = () => {
         const sortedCategories = Object.entries(categoryTotals)
             .sort((a, b) => b[1] - a[1]);
 
-        const top5Categories = sortedCategories.slice(0, 5);
-        const otherCategories = sortedCategories.slice(5);
+        const top5Categories = sortedCategories.slice(0, 4);
+        const otherCategories = sortedCategories.slice(4);
 
         const otherTotal = otherCategories.reduce((sum, [_, value]) => sum + value, 0);
 
@@ -152,6 +159,26 @@ const SpendingDashboard: React.FC = () => {
             { name: 'Other', value: otherTotal }
         ];
         setCategoryBreakdown(categoryBreakdownData);
+
+        // Add logic to process category trend data
+        const categoryTrendMap: { [key: string]: { [key: string]: number } } = {};
+        transactions.forEach(t => {
+            if (t.amount < 0) { // Only consider expenses
+                const monthYear = new Date(t.date).toISOString().slice(0, 7); // YYYY-MM format
+                if (!categoryTrendMap[monthYear]) {
+                    categoryTrendMap[monthYear] = {};
+                }
+                const category = t.category || 'Uncategorized';
+                categoryTrendMap[monthYear][category] = (categoryTrendMap[monthYear][category] || 0) + Math.abs(t.amount);
+            }
+        });
+
+        const categoryTrendData: CategoryTrendItem[] = Object.entries(categoryTrendMap).map(([date, categories]) => ({
+            date,
+            ...categories
+        }));
+
+        setCategoryTrendData(categoryTrendData.sort((a, b) => a.date.localeCompare(b.date)));
 
         const sortedMonthlySpending = Object.entries(monthlySpendingData)
             .sort(([dateA], [dateB]) => dateA.localeCompare(dateB))
@@ -173,19 +200,6 @@ const SpendingDashboard: React.FC = () => {
             }))
             .sort((a, b) => b.amount - a.amount);
         setRecurringPayments(recurring);
-
-
-        let runningBalance = 0;
-        const balanceTrendData = transactions
-            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-            .map(t => {
-                runningBalance += t.amount;
-                return {
-                    date: t.date,
-                    balance: runningBalance
-                };
-            });
-        setBalanceTrend(balanceTrendData);
 
     }, []);
 
@@ -615,22 +629,37 @@ const SpendingDashboard: React.FC = () => {
                             </div>
                             <div className="grid grid-cols-1 gap-8 mb-8">
                                 <div className="bg-white p-4 rounded shadow">
-                                    <h2 className="text-lg font-semibold mb-4">Balance Trend Over Time</h2>
+                                    <h2 className="text-lg font-semibold mb-4">Category Spending Trend</h2>
                                     <ResponsiveContainer width="100%" height={300}>
-                                        <AreaChart data={balanceTrend}>
+                                        <BarChart data={categoryTrendData}>
                                             <CartesianGrid strokeDasharray="3 3" />
                                             <XAxis
                                                 dataKey="date"
-                                                tickFormatter={(tick) => new Date(tick).toLocaleDateString('default', { month: 'short', year: '2-digit' })}
+                                                tickFormatter={(tick) => {
+                                                    const [year, month] = tick.split('-');
+                                                    const date = new Date(parseInt(year), parseInt(month) - 1, 1);
+                                                    return date.toLocaleString('default', { month: 'short', year: '2-digit' });
+                                                }}
                                             />
                                             <YAxis />
                                             <Tooltip
                                                 formatter={(value) => formatDollarAmount(value as number)}
-                                                labelFormatter={(label) => new Date(label).toLocaleDateString('default', { month: 'long', day: 'numeric', year: 'numeric' })}
+                                                labelFormatter={(label) => {
+                                                    const [year, month] = label.split('-');
+                                                    const date = new Date(parseInt(year), parseInt(month) - 1, 1);
+                                                    return date.toLocaleString('default', { month: 'long', year: 'numeric' });
+                                                }}
                                             />
                                             <Legend />
-                                            <Area type="monotone" dataKey="balance" stroke="#8884d8" fill="#8884d8" />
-                                        </AreaChart>
+                                            {categoryBreakdown.map((category, index) => (
+                                                <Bar
+                                                    key={category.name}
+                                                    dataKey={category.name}
+                                                    stackId="a"
+                                                    fill={COLORS[index % COLORS.length]}
+                                                />
+                                            ))}
+                                        </BarChart>
                                     </ResponsiveContainer>
                                 </div>
                             </div>
@@ -665,20 +694,7 @@ const SpendingDashboard: React.FC = () => {
                     </div>
                 ) : (
                     <>
-                        {/* New static What's New box */}
-                        <div className="mt-4 bg-yellow-100 bg-opacity-50 rounded-l p-4">
-                            <div className="flex items-center space-x-2 mb-2">
-                                <Star className="w-5 h-5 text-yellow-500" />
-                                <h3 className="text-lg font-semibold text-indigo-700">What's New</h3>
-                            </div>
-                            <ul className="text-sm space-y-2 text-gray-700 list-disc list-inside">
-                                <li>Support for multiple CSV uploads</li>
-                                <li>Enhanced AI insights</li>
-                                <li>Improved category detection</li>
-                                <li>New balance trend chart</li>
-                            </ul>
-                        </div>
-                        <div className="bg-white bg-opacity-40 backdrop-filter backdrop-blur-lg shadow-lg rounded-lg overflow-hidden mt-6 p-5">
+                        <div className="bg-white bg-opacity-40 backdrop-filter backdrop-blur-lg shadow-m rounded-lg overflow-hidden mt-6 mb-6 p-5">
                             <h2 className="text-xl font-bold mb-3 text-indigo-800">Upload Your Transaction Summary(s)</h2>
                             <p className="text-sm text-gray-700 mb-4">
                                 Please upload a transaction summary CSV from your bank to view the spending dashboard.
@@ -705,7 +721,7 @@ const SpendingDashboard: React.FC = () => {
                                 </ul>
                             </div>
 
-                            <CollapsibleSection title="How to Download Your Transaction Summary">
+                            <CollapsibleSection title="How to Download Your Transaction Summary" color='bg-white-10'>
                                 <ol className="text-sm space-y-2 text-gray-700 list-decimal list-inside">
                                     <li>Log into your online banking</li>
                                     <li>Select the account you want to download a CSV for</li>
@@ -717,6 +733,18 @@ const SpendingDashboard: React.FC = () => {
                                 </ol>
                             </CollapsibleSection>
                         </div>
+                        {/* New static What's New box */}
+                        <CollapsibleSection
+                            title="What's New"
+                            icon={<Star className="w-5 h-5 text-yellow-500" />}
+                            color='bg-yellow-100'>
+                            <ul className="text-sm space-y-2 text-gray-700 list-disc list-inside">
+                                <li>Support for multiple CSV uploads</li>
+                                <li>Enhanced AI insights</li>
+                                <li>Improved category detection</li>
+                                <li>New balance trend chart</li>
+                            </ul>
+                        </CollapsibleSection>
                     </>
                 )}
 
