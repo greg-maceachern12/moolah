@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { XAxis, YAxis, AreaChart, Area, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, BarChart, Bar } from 'recharts';
+import { XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, BarChart, Bar } from 'recharts';
 import { Calendar, Sun, ShoppingBag, Upload, RefreshCw, TrendingUp, TrendingDown, DollarSign, ArrowUpDown, Plus, Sparkles, FileText, Lock, Shield, Smartphone, Star, MessageCircle } from 'lucide-react';
 import Papa from 'papaparse';
 import CollapsibleSection from './CollapsibleSection';
@@ -24,7 +24,6 @@ const SpendingDashboard: React.FC = () => {
     const [monthOverMonthChange, setMonthOverMonthChange] = useState(0);
     const [yearOverYearChange, setYearOverYearChange] = useState(0);
     const [showYearOverYear, setShowYearOverYear] = useState(false);
-    const [balanceTrend, setBalanceTrend] = useState<Array<{ date: string, balance: number }>>([]);
 
     const [csvUploaded, setCsvUploaded] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -34,7 +33,11 @@ const SpendingDashboard: React.FC = () => {
     const [isProcessing, setIsProcessing] = useState(false);
     const [selectedFileCount, setSelectedFileCount] = useState(0);
 
+    const [categorySpendByMonth, setCategorySpendByMonth] = useState<any[]>([]);
+    const [categories, setCategories] = useState<string[]>([]);
+
     const processTransactions = useCallback((transactions: any[]) => {
+        // Initialize variables to store aggregated data
         let totalSpent = 0;
         let totalIncome = 0;
         const merchantTotals: { [key: string]: number } = {};
@@ -50,70 +53,88 @@ const SpendingDashboard: React.FC = () => {
         const yearlyTotals: { [key: string]: number } = {};
         let largestExp = { description: '', amount: 0, date: '' };
 
+        // For category spend by month
+        const categorySpendByMonthData: { [key: string]: { [key: string]: number } } = {};
+        const categories = new Set<string>();
+
+        // Find the date range of transactions
         let earliestDate = new Date(transactions[0].date);
         let latestDate = new Date(transactions[0].date);
 
+        // Iterate through each transaction to aggregate data
         transactions.forEach(t => {
             const transactionDate = new Date(t.date);
             if (transactionDate < earliestDate) earliestDate = transactionDate;
             if (transactionDate > latestDate) latestDate = transactionDate;
 
             const amount = Math.abs(t.amount);
-
             const monthYear = transactionDate.toLocaleString('default', { month: 'short', year: 'numeric' });
+
             if (t.amount < 0) {
-                // Spending
+                // Process spending transactions
                 totalSpent += amount;
                 merchantTotals[t.description] = (merchantTotals[t.description] || 0) + amount;
                 categoryTotals[t.category] = (categoryTotals[t.category] || 0) + amount;
 
+                // Aggregate monthly spending
                 const monthYearKey = transactionDate.toISOString().slice(0, 7); // YYYY-MM format
                 monthlySpendingData[monthYearKey] = (monthlySpendingData[monthYearKey] || 0) + amount;
 
+                // Category spend by month
+                if (!categorySpendByMonthData[monthYearKey]) {
+                    categorySpendByMonthData[monthYearKey] = {};
+                }
+                if (!categorySpendByMonthData[monthYearKey][t.category]) {
+                    categorySpendByMonthData[monthYearKey][t.category] = 0;
+                }
+                categorySpendByMonthData[monthYearKey][t.category] += amount;
+                categories.add(t.category);
+
+                // Identify potential recurring payments
                 const key = `${t.description}-${amount.toFixed(2)}`;
                 if (!recurringCandidates[key]) {
                     recurringCandidates[key] = { amount, months: [] };
                 }
                 const monthIndex = transactionDate.getMonth();
                 if (!recurringCandidates[key].months.includes(monthIndex)) {
-                    recurringCandidates[key].months.unshift(monthIndex);
+                    recurringCandidates[key].months.push(monthIndex);
                 }
 
-                // Largest expense
+                // Track largest expense
                 if (amount > largestExp.amount) {
                     largestExp = { description: t.description, amount: amount, date: t.date };
                 }
 
-                // Day of week spending
+                // Aggregate spending by day of week
                 const dayOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][transactionDate.getUTCDay()];
                 dayOfWeekSpending[dayOfWeek].total += amount;
                 dayOfWeekSpending[dayOfWeek].count += 1;
 
-                // Monthly and yearly totals for change calculations
+                // Aggregate monthly and yearly totals for change calculations
                 const year = transactionDate.toISOString().substring(0, 4);
                 monthlyTotals[monthYear] = (monthlyTotals[monthYear] || 0) + amount;
                 yearlyTotals[year] = (yearlyTotals[year] || 0) + amount;
             } else {
-                // Income
+                // Process income transactions
                 totalIncome += amount;
             }
         });
 
+        // Set state for basic financial metrics
         setTotalSpent(totalSpent);
         setTotalIncome(totalIncome);
         setStartDate(earliestDate);
         setEndDate(latestDate);
-
         setLargestExpense(largestExp);
 
-        // Calculate average spending by day of week
+        // Calculate and set average spending by day of week
         const avgSpending = Object.entries(dayOfWeekSpending).map(([day, data]) => ({
             day,
             amount: data.count > 0 ? data.total / data.count : 0
         }));
         setAvgSpendingByDayOfWeek(avgSpending);
 
-        // Calculate month-over-month change
+        // Calculate and set month-over-month change
         const sortedMonths = Object.keys(monthlyTotals).sort();
         if (sortedMonths.length >= 2) {
             const currentMonth = monthlyTotals[sortedMonths[sortedMonths.length - 1]];
@@ -121,7 +142,7 @@ const SpendingDashboard: React.FC = () => {
             setMonthOverMonthChange(((currentMonth - previousMonth) / previousMonth) * 100);
         }
 
-        // Calculate year-over-year change
+        // Calculate and set year-over-year change
         const sortedYears = Object.keys(yearlyTotals).sort();
         if (sortedYears.length >= 2) {
             const currentYear = yearlyTotals[sortedYears[sortedYears.length - 1]];
@@ -129,37 +150,61 @@ const SpendingDashboard: React.FC = () => {
             setYearOverYearChange(((currentYear - previousYear) / previousYear) * 100);
         }
 
+        // Calculate and set average monthly and daily spend
         const daysDifference = (latestDate.getTime() - earliestDate.getTime()) / (1000 * 3600 * 24) + 1;
         const monthsDifference = (latestDate.getFullYear() - earliestDate.getFullYear()) * 12 +
             (latestDate.getMonth() - earliestDate.getMonth()) + 1;
-
         setAvgMonthlySpend(totalSpent / monthsDifference);
         setAvgDailySpend(totalSpent / daysDifference);
 
+        // Set top merchant
         const topMerchantEntry = Object.entries(merchantTotals).reduce((a, b) => a[1] > b[1] ? a : b);
         setTopMerchant({ name: topMerchantEntry[0], amount: topMerchantEntry[1] });
 
+        // Process and set category breakdown
         const sortedCategories = Object.entries(categoryTotals)
             .sort((a, b) => b[1] - a[1]);
 
-        const top5Categories = sortedCategories.slice(0, 5);
-        const otherCategories = sortedCategories.slice(5);
+        const topCategoryNames = sortedCategories.slice(0, 4).map(([name]) => name);
+        const otherCategoryName = 'Other';
 
-        const otherTotal = otherCategories.reduce((sum, [_, value]) => sum + value, 0);
+        let topCategories = sortedCategories.slice(0, 4).map(([name, value]) => ({ name, value }));
+        const otherValue = sortedCategories.slice(4).reduce((sum, [_, value]) => sum + value, 0);
+        if (otherValue > 0) {
+            topCategories.push({ name: otherCategoryName, value: otherValue });
+        }
 
-        const categoryBreakdownData = [
-            ...top5Categories.map(([name, value]) => ({ name, value })),
-            { name: 'Other', value: otherTotal }
-        ];
-        setCategoryBreakdown(categoryBreakdownData);
+        setCategoryBreakdown(topCategories);
+        setCategories([...topCategoryNames, otherCategoryName]);
 
+
+        // Process and set monthly spending data
         const sortedMonthlySpending = Object.entries(monthlySpendingData)
             .sort(([dateA], [dateB]) => dateA.localeCompare(dateB))
             .map(([date, amount]) => ({ date, amount }));
-
         setMonthlySpending(sortedMonthlySpending);
 
+        // Process and set category spend by month
+        // Update categorySpendByMonth to use top 4 + Other
+        const updatedCategorySpendByMonth = Object.entries(categorySpendByMonthData).map(([date, spendData]) => {
+            const updatedSpendData: { [key: string]: string | number } = { date };
+            let otherTotal = 0;
 
+            Object.entries(spendData as { [key: string]: number }).forEach(([category, amount]) => {
+                if (topCategoryNames.includes(category)) {
+                    updatedSpendData[category] = amount;
+                } else {
+                    otherTotal += amount;
+                }
+            });
+
+            updatedSpendData[otherCategoryName] = otherTotal;
+            return updatedSpendData;
+        });
+
+        setCategorySpendByMonth(updatedCategorySpendByMonth);
+
+        // Process and set recurring payments
         const recurringThreshold = 3;
         const recurring = Object.entries(recurringCandidates)
             .filter(([_, data]) => data.months.length >= recurringThreshold)
@@ -174,19 +219,8 @@ const SpendingDashboard: React.FC = () => {
             .sort((a, b) => b.amount - a.amount);
         setRecurringPayments(recurring);
 
-
-        let runningBalance = 0;
-        const balanceTrendData = transactions
-            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-            .map(t => {
-                runningBalance += t.amount;
-                return {
-                    date: t.date,
-                    balance: runningBalance
-                };
-            });
-        setBalanceTrend(balanceTrendData);
-
+        // Set processed transactions for further use
+        setProcessedTransactions(transactions);
     }, []);
 
     const toggleChangeMetric = () => {
@@ -426,6 +460,7 @@ const SpendingDashboard: React.FC = () => {
                 {csvUploaded ? (
                     <div className="space-y-8 animate-fade-in">
 
+                        {/* Metric Cards */}
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-8">
                             <div className="bg-white p-6 rounded-lg shadow-md">
                                 <div className="flex items-center justify-between mb-2">
@@ -614,10 +649,11 @@ const SpendingDashboard: React.FC = () => {
                                 </ResponsiveContainer>
                             </div>
                             <div className="grid grid-cols-1 gap-8 mb-8">
+                                {/* Updated Category Spend by Month chart */}
                                 <div className="bg-white p-4 rounded shadow">
-                                    <h2 className="text-lg font-semibold mb-4">Balance Trend Over Time</h2>
+                                    <h2 className="text-lg font-semibold mb-4">Category Spend by Month</h2>
                                     <ResponsiveContainer width="100%" height={300}>
-                                        <AreaChart data={balanceTrend}>
+                                        <BarChart data={categorySpendByMonth}>
                                             <CartesianGrid strokeDasharray="3 3" />
                                             <XAxis
                                                 dataKey="date"
@@ -626,11 +662,18 @@ const SpendingDashboard: React.FC = () => {
                                             <YAxis />
                                             <Tooltip
                                                 formatter={(value) => formatDollarAmount(value as number)}
-                                                labelFormatter={(label) => new Date(label).toLocaleDateString('default', { month: 'long', day: 'numeric', year: 'numeric' })}
+                                                labelFormatter={(label) => new Date(label).toLocaleDateString('default', { month: 'long', year: 'numeric' })}
                                             />
                                             <Legend />
-                                            <Area type="monotone" dataKey="balance" stroke="#8884d8" fill="#8884d8" />
-                                        </AreaChart>
+                                            {categories.map((category, index) => (
+                                                <Bar
+                                                    key={category}
+                                                    dataKey={category}
+                                                    stackId="a"
+                                                    fill={COLORS[index % COLORS.length]}
+                                                />
+                                            ))}
+                                        </BarChart>
                                     </ResponsiveContainer>
                                 </div>
                             </div>
@@ -665,20 +708,7 @@ const SpendingDashboard: React.FC = () => {
                     </div>
                 ) : (
                     <>
-                        {/* New static What's New box */}
-                        <div className="mt-4 bg-yellow-100 bg-opacity-50 rounded-l p-4">
-                            <div className="flex items-center space-x-2 mb-2">
-                                <Star className="w-5 h-5 text-yellow-500" />
-                                <h3 className="text-lg font-semibold text-indigo-700">What's New</h3>
-                            </div>
-                            <ul className="text-sm space-y-2 text-gray-700 list-disc list-inside">
-                                <li>Support for multiple CSV uploads</li>
-                                <li>Enhanced AI insights</li>
-                                <li>Improved category detection</li>
-                                <li>New balance trend chart</li>
-                            </ul>
-                        </div>
-                        <div className="bg-white bg-opacity-40 backdrop-filter backdrop-blur-lg shadow-lg rounded-lg overflow-hidden mt-6 p-5">
+                        <div className="bg-white bg-opacity-40 backdrop-filter backdrop-blur-lg shadow-m rounded-lg overflow-hidden mt-6 mb-6 p-5">
                             <h2 className="text-xl font-bold mb-3 text-indigo-800">Upload Your Transaction Summary(s)</h2>
                             <p className="text-sm text-gray-700 mb-4">
                                 Please upload a transaction summary CSV from your bank to view the spending dashboard.
@@ -705,7 +735,7 @@ const SpendingDashboard: React.FC = () => {
                                 </ul>
                             </div>
 
-                            <CollapsibleSection title="How to Download Your Transaction Summary">
+                            <CollapsibleSection title="How to Download Your Transaction Summary" color='bg-white-20'>
                                 <ol className="text-sm space-y-2 text-gray-700 list-decimal list-inside">
                                     <li>Log into your online banking</li>
                                     <li>Select the account you want to download a CSV for</li>
@@ -717,6 +747,18 @@ const SpendingDashboard: React.FC = () => {
                                 </ol>
                             </CollapsibleSection>
                         </div>
+                        {/* New static What's New box */}
+                        <CollapsibleSection
+                            title="What's New"
+                            icon={<Star className="w-5 h-5 text-yellow-500" />}
+                            color='bg-yellow-100'>
+                            <ul className="text-sm space-y-2 text-gray-700 list-disc list-inside">
+                                <li>Support for multiple CSV uploads</li>
+                                <li>Enhanced AI insights</li>
+                                <li>Improved category detection</li>
+                                <li>New balance trend chart</li>
+                            </ul>
+                        </CollapsibleSection>
                     </>
                 )}
 
