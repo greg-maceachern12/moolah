@@ -735,14 +735,14 @@ const SpendingDashboard: React.FC = () => {
                         </div>
                         {/* New static What's New box */}
                         <CollapsibleSection
-                            title="What's New"
+                            title="What's New (September)"
                             icon={<Star className="w-5 h-5 text-yellow-500" />}
                             color='bg-yellow-100'>
                             <ul className="text-sm space-y-2 text-gray-700 list-disc list-inside">
-                                <li>Support for multiple CSV uploads</li>
-                                <li>Enhanced AI insights</li>
-                                <li>Improved category detection</li>
-                                <li>New balance trend chart</li>
+                                <li>➕ Support for multiple CSV uploads</li>
+                                <li>✨ Enhanced AI insights</li>
+                                <li>🤖 Improved category detection</li>
+                                <li>📊 New balance trend chart</li>
                             </ul>
                         </CollapsibleSection>
                     </>
