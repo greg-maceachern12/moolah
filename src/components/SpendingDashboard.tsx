@@ -747,6 +747,16 @@ const SpendingDashboard: React.FC = () => {
                         </CollapsibleSection>
                     </>
                 )}
+                <div className="flex justify-center items-center mt-8">
+                    <a
+                        href="https://buymeacoffee.com/gregmac"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-block px-4 py-2 bg-indigo-200 text-black font-bold rounded-lg shadow-md hover:bg-indigo-300 transition duration-200"
+                    >
+                        ☕ Buy me a coffee
+                    </a>
+                </div>
 
                 {/* Improved Feedback form at the bottom */}
                 <div className="mt-8 flex justify-center">
