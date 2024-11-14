@@ -337,7 +337,7 @@ const SpendingDashboard: React.FC = () => {
         console.log("Generating Insights from 4o")
         // console.log(processedTransactions)
         try {
-            const response = await fetch('https://faas-nyc1-2ef2e6cc.doserverless.co/api/v1/web/fn-fd9ed0a3-7151-4f4d-80f0-a76988a5e9b9/openai/analyzeSpending', {
+            const response = await fetch('https://visuaicalls.azurewebsites.net/api/financialAnalyze?code=J9r5P9CUUcEm8JMARGizL1ynH84mwNkTxAU79Vv8nNVXAzFu7Xunhg%3D%3D', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
