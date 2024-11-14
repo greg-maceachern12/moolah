@@ -1,8 +1,9 @@
 import React, { useState, useCallback } from 'react';
 import { XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, BarChart, Bar } from 'recharts';
-import { Calendar, Sun, ShoppingBag, Upload, RefreshCw, TrendingUp, TrendingDown, DollarSign, ArrowUpDown, Plus, Sparkles, FileText, Lock, Shield, Smartphone, Star, MessageCircle } from 'lucide-react';
+import { Calendar, Sun, ShoppingBag, Upload, RefreshCw, TrendingUp, TrendingDown, DollarSign, ArrowUpDown, Plus, Sparkles, FileText, MessageCircle } from 'lucide-react';
 import Papa from 'papaparse';
 import CollapsibleSection from './CollapsibleSection';
+import EmptyState from './EmptyState';
 
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82ca9d', '#ffc658'];
@@ -401,7 +402,7 @@ const SpendingDashboard: React.FC = () => {
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 space-y-4 sm:space-y-0">
                         <div className="flex items-center">
                             <h1 className="text-2xl sm:text-3xl font-bold text-indigo-800 flex items-center">
-                                Moolah | On-Device Spending Report
+                                Moolah
                                 <img src="assets/icon.png" alt="" className="w-10 h-10 ml-2" />
                             </h1>
                         </div>
@@ -694,59 +695,7 @@ const SpendingDashboard: React.FC = () => {
                         </div>
                     </div>
                 ) : (
-                    <>
-                        <div className="bg-white bg-opacity-40 backdrop-filter backdrop-blur-lg shadow-m rounded-lg overflow-hidden mt-6 mb-6 p-5">
-                            <h2 className="text-xl font-bold mb-3 text-indigo-800">Upload Your Transaction Summary(s)</h2>
-                            <p className="text-sm text-gray-700 mb-4">
-                                Please upload a transaction summary CSV from your bank to view the spending dashboard.
-                            </p>
-
-                            <div className="mb-4 bg-green-100 bg-opacity-50 rounded-lg p-3">
-                                <h4 className="text-md font-semibold mb-2 flex items-center text-green-800">
-                                    <Shield className="w-4 h-4 mr-2 text-green-600" />
-                                    Your Privacy is Protected
-                                </h4>
-                                <ul className="text-sm space-y-1 text-green-700">
-                                    <li className="flex items-center">
-                                        <Lock className="w-3 h-3 mr-1 text-green-600" />
-                                        <span>Your data remains entirely private and secure</span>
-                                    </li>
-                                    <li className="flex items-center">
-                                        <Smartphone className="w-3 h-3 mr-1 text-green-600" />
-                                        <span>All processing of data is private and not shared with anyone</span>
-                                    </li>
-                                    <li className="flex items-center">
-                                        <FileText className="w-3 h-3 mr-1 text-green-600" />
-                                        <span>No data is stored on any device</span>
-                                    </li>
-                                </ul>
-                            </div>
-
-                            <CollapsibleSection title="How to Download Your Transaction Summary" color='bg-white-10'>
-                                <ol className="text-sm space-y-2 text-gray-700 list-decimal list-inside">
-                                    <li>Log into your online banking</li>
-                                    <li>Select the account you want to download a CSV for</li>
-                                    <li>Find a "view statements" or "view transaction history" tab and click on it</li>
-                                    <li>Insert the date range we have asked you for</li>
-                                    <li>Select the CSV option as the "Output" or "Format"</li>
-                                    <li>Click "Export", "Save" or "Download" to save the file</li>
-                                    <li>Upload the file using the button above</li>
-                                </ol>
-                            </CollapsibleSection>
-                        </div>
-                        {/* New static What's New box */}
-                        <CollapsibleSection
-                            title="What's New (September)"
-                            icon={<Star className="w-5 h-5 text-yellow-500" />}
-                            color='bg-yellow-100'>
-                            <ul className="text-sm space-y-2 text-gray-700 list-disc list-inside">
-                                <li>➕ Support for multiple CSV uploads</li>
-                                <li>✨ Enhanced AI insights</li>
-                                <li>🤖 Improved category detection</li>
-                                <li>📊 New balance trend chart</li>
-                            </ul>
-                        </CollapsibleSection>
-                    </>
+                    <EmptyState onFileUpload={handleFileUpload} />
                 )}
                 <div className="flex justify-center items-center mt-8">
                     <a
