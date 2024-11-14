@@ -335,8 +335,9 @@ const SpendingDashboard: React.FC = () => {
         setIsLoading(true);
         setAiInsights(null);
         console.log("Generating Insights from 4o")
+        // console.log(processedTransactions)
         try {
-            const response = await fetch('https://visuaicalls.azurewebsites.net/api/financialAnalyze?code=J9r5P9CUUcEm8JMARGizL1ynH84mwNkTxAU79Vv8nNVXAzFu7Xunhg%3D%3D', {
+            const response = await fetch('https://faas-nyc1-2ef2e6cc.doserverless.co/api/v1/web/fn-fd9ed0a3-7151-4f4d-80f0-a76988a5e9b9/openai/analyzeSpending', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -400,7 +401,7 @@ const SpendingDashboard: React.FC = () => {
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 space-y-4 sm:space-y-0">
                         <div className="flex items-center">
                             <h1 className="text-2xl sm:text-3xl font-bold text-indigo-800 flex items-center">
-                                Spending Report
+                                Moolah - On-Device Spending Report
                                 <img src="assets/icon.png" alt="" className="w-10 h-10 ml-2" />
                             </h1>
                         </div>
