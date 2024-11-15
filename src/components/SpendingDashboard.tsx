@@ -406,21 +406,6 @@ const SpendingDashboard: React.FC = () => {
                                 <img src="assets/icon.png" alt="" className="w-10 h-10 ml-2" />
                             </h1>
                         </div>
-                        <div>
-                            <label htmlFor="csv-upload" className="cursor-pointer bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg inline-flex items-center transition duration-200">
-                                <Upload className="w-5 h-5 mr-2" />
-                                <span>{isProcessing ? 'Processing...' : 'Upload CSV(s)'}</span>
-                            </label>
-                            <input
-                                id="csv-upload"
-                                type="file"
-                                accept=".csv"
-                                onChange={handleFileUpload}
-                                className="hidden"
-                                multiple
-                                disabled={isProcessing}
-                            />
-                        </div>
                     </div>
                     {selectedFileCount > 0 && (
                         <div className="text-sm text-gray-600 flex items-center mt-2">
