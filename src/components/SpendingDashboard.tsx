@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, BarChart, Bar } from 'recharts';
-import { Calendar, Sun, ShoppingBag, Upload, RefreshCw, TrendingUp, TrendingDown, DollarSign, ArrowUpDown, Plus, Sparkles, FileText, MessageCircle } from 'lucide-react';
+import { Calendar, Sun, ShoppingBag, RefreshCw, TrendingUp, TrendingDown, DollarSign, ArrowUpDown, Plus, Sparkles, FileText, MessageCircle } from 'lucide-react';
 import Papa from 'papaparse';
 import CollapsibleSection from './CollapsibleSection';
 import EmptyState from './EmptyState';
@@ -35,8 +35,6 @@ const SpendingDashboard: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [aiInsights, setAiInsights] = useState<string | null>(null);
     const [hasCategoryData, setHasCategoryData] = useState(false);
-
-    const [isProcessing, setIsProcessing] = useState(false);
     const [selectedFileCount, setSelectedFileCount] = useState(0);
 
     const [categoryTrendData, setCategoryTrendData] = useState<CategoryTrendItem[]>([]);
@@ -276,7 +274,6 @@ const SpendingDashboard: React.FC = () => {
     const processFiles = useCallback(async (files: File[]) => {
         if (files.length === 0) return;
 
-        setIsProcessing(true);
         const allTransactions: any[] = [];
 
         for (const file of files) {
@@ -316,7 +313,6 @@ const SpendingDashboard: React.FC = () => {
         setProcessedTransactions(allTransactions);
         processTransactions(allTransactions);
         setCsvUploaded(true);
-        setIsProcessing(false);
     }, [processTransactions]); // Add processTransactions to the dependency array
 
     const handleFileUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
