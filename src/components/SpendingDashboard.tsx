@@ -41,171 +41,244 @@ const SpendingDashboard: React.FC = () => {
 
 
     const processTransactions = useCallback((transactions: any[]) => {
-        let totalSpent = 0;
-        let totalIncome = 0;
-        const merchantTotals: { [key: string]: number } = {};
-        const categoryTotals: { [key: string]: number } = {};
-        const monthlySpendingData: { [key: string]: number } = {};
-        const recurringCandidates: { [key: string]: { amount: number, months: number[] } } = {};
-        const dayOfWeekSpending: { [key: string]: { total: number, count: number } } = {
-            'Sun': { total: 0, count: 0 }, 'Mon': { total: 0, count: 0 }, 'Tue': { total: 0, count: 0 },
-            'Wed': { total: 0, count: 0 }, 'Thu': { total: 0, count: 0 }, 'Fri': { total: 0, count: 0 },
-            'Sat': { total: 0, count: 0 }
-        };
-        const monthlyTotals: { [key: string]: number } = {};
-        const yearlyTotals: { [key: string]: number } = {};
-        let largestExp = { description: '', amount: 0, date: '' };
-
-        let earliestDate = new Date(transactions[0].date);
-        let latestDate = new Date(transactions[0].date);
-
-        transactions.forEach(t => {
-            const transactionDate = new Date(t.date);
-            if (transactionDate < earliestDate) earliestDate = transactionDate;
-            if (transactionDate > latestDate) latestDate = transactionDate;
-
-            const amount = Math.abs(t.amount);
-
-            const monthYear = transactionDate.toLocaleString('default', { month: 'short', year: 'numeric' });
-            if (t.amount < 0) {
-                // Spending
-                totalSpent += amount;
-                merchantTotals[t.description] = (merchantTotals[t.description] || 0) + amount;
-                categoryTotals[t.category] = (categoryTotals[t.category] || 0) + amount;
-
-                const monthYearKey = transactionDate.toISOString().slice(0, 7); // YYYY-MM format
-                monthlySpendingData[monthYearKey] = (monthlySpendingData[monthYearKey] || 0) + amount;
-
-                const key = `${t.description}-${amount.toFixed(2)}`;
-                if (!recurringCandidates[key]) {
-                    recurringCandidates[key] = { amount, months: [] };
+        if (!transactions || transactions.length === 0) {
+            console.warn('No transaction data provided');
+            return;
+        }
+    
+        try {
+            let totalSpent = 0;
+            let totalIncome = 0;
+            const merchantTotals: { [key: string]: number } = {};
+            const categoryTotals: { [key: string]: number } = {};
+            const monthlySpendingData: { [key: string]: number } = {};
+            const recurringCandidates: { [key: string]: { amount: number, months: number[] } } = {};
+            const dayOfWeekSpending: { [key: string]: { total: number, count: number } } = {
+                'Sun': { total: 0, count: 0 }, 'Mon': { total: 0, count: 0 }, 'Tue': { total: 0, count: 0 },
+                'Wed': { total: 0, count: 0 }, 'Thu': { total: 0, count: 0 }, 'Fri': { total: 0, count: 0 },
+                'Sat': { total: 0, count: 0 }
+            };
+            const monthlyTotals: { [key: string]: number } = {};
+            const yearlyTotals: { [key: string]: number } = {};
+            let largestExp = { description: 'Unknown', amount: 0, date: new Date().toISOString() };
+    
+            // Safely get the first valid date
+            const validDates = transactions
+                .map(t => new Date(t.date))
+                .filter(date => !isNaN(date.getTime()));
+    
+            if (validDates.length === 0) {
+                console.error('No valid dates found in transactions');
+                return;
+            }
+    
+            let earliestDate = validDates[0];
+            let latestDate = validDates[0];
+    
+            transactions.forEach(t => {
+                // Skip invalid transactions
+                if (!t.date || !t.amount || isNaN(parseFloat(t.amount))) {
+                    console.warn('Skipping invalid transaction:', t);
+                    return;
                 }
-                const monthIndex = transactionDate.getMonth();
-                if (!recurringCandidates[key].months.includes(monthIndex)) {
-                    recurringCandidates[key].months.unshift(monthIndex);
+    
+                const transactionDate = new Date(t.date);
+                if (isNaN(transactionDate.getTime())) {
+                    console.warn('Invalid date in transaction:', t);
+                    return;
                 }
-
-                // Largest expense
-                if (amount > largestExp.amount) {
-                    largestExp = { description: t.description, amount: amount, date: t.date };
+    
+                if (transactionDate < earliestDate) earliestDate = transactionDate;
+                if (transactionDate > latestDate) latestDate = transactionDate;
+    
+                const amount = Math.abs(parseFloat(t.amount));
+    
+                const monthYear = transactionDate.toLocaleString('default', { month: 'short', year: 'numeric' });
+                if (t.amount < 0) {
+                    // Spending
+                    totalSpent += amount;
+    
+                    // Only track merchant data if description exists
+                    if (t.description) {
+                        merchantTotals[t.description] = (merchantTotals[t.description] || 0) + amount;
+                    }
+    
+                    // Only track category data if category exists
+                    if (t.category) {
+                        categoryTotals[t.category] = (categoryTotals[t.category] || 0) + amount;
+                    }
+    
+                    const monthYearKey = transactionDate.toISOString().slice(0, 7);
+                    monthlySpendingData[monthYearKey] = (monthlySpendingData[monthYearKey] || 0) + amount;
+    
+                    // Only track recurring payments if description exists
+                    if (t.description) {
+                        const key = `${t.description}-${amount.toFixed(2)}`;
+                        if (!recurringCandidates[key]) {
+                            recurringCandidates[key] = { amount, months: [] };
+                        }
+                        const monthIndex = transactionDate.getMonth();
+                        if (!recurringCandidates[key].months.includes(monthIndex)) {
+                            recurringCandidates[key].months.unshift(monthIndex);
+                        }
+                    }
+    
+                    // Update largest expense if it's larger and has a description
+                    if (amount > largestExp.amount && t.description) {
+                        largestExp = { 
+                            description: t.description, 
+                            amount: amount, 
+                            date: t.date 
+                        };
+                    }
+    
+                    // Day of week spending
+                    const dayOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][transactionDate.getUTCDay()];
+                    dayOfWeekSpending[dayOfWeek].total += amount;
+                    dayOfWeekSpending[dayOfWeek].count += 1;
+    
+                    // Monthly and yearly totals for change calculations
+                    const year = transactionDate.toISOString().substring(0, 4);
+                    monthlyTotals[monthYear] = (monthlyTotals[monthYear] || 0) + amount;
+                    yearlyTotals[year] = (yearlyTotals[year] || 0) + amount;
+                } else {
+                    // Income
+                    totalIncome += amount;
                 }
-
-                // Day of week spending
-                const dayOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][transactionDate.getUTCDay()];
-                dayOfWeekSpending[dayOfWeek].total += amount;
-                dayOfWeekSpending[dayOfWeek].count += 1;
-
-                // Monthly and yearly totals for change calculations
-                const year = transactionDate.toISOString().substring(0, 4);
-                monthlyTotals[monthYear] = (monthlyTotals[monthYear] || 0) + amount;
-                yearlyTotals[year] = (yearlyTotals[year] || 0) + amount;
+            });
+    
+            setTotalSpent(totalSpent);
+            setTotalIncome(totalIncome);
+            setStartDate(earliestDate);
+            setEndDate(latestDate);
+            setLargestExpense(largestExp);
+    
+            // Calculate average spending by day of week with safety checks
+            const avgSpending = Object.entries(dayOfWeekSpending).map(([day, data]) => ({
+                day,
+                amount: data.count > 0 ? data.total / data.count : 0
+            }));
+            setAvgSpendingByDayOfWeek(avgSpending);
+    
+            // Calculate month-over-month change with safety checks
+            const sortedMonths = Object.keys(monthlyTotals).sort();
+            if (sortedMonths.length >= 2) {
+                const currentMonth = monthlyTotals[sortedMonths[sortedMonths.length - 1]] || 0;
+                const previousMonth = monthlyTotals[sortedMonths[sortedMonths.length - 2]] || 0;
+                const momChange = previousMonth !== 0 ? ((currentMonth - previousMonth) / previousMonth) * 100 : 0;
+                setMonthOverMonthChange(momChange);
             } else {
-                // Income
-                totalIncome += amount;
+                setMonthOverMonthChange(0);
             }
-        });
-
-        setTotalSpent(totalSpent);
-        setTotalIncome(totalIncome);
-        setStartDate(earliestDate);
-        setEndDate(latestDate);
-
-        setLargestExpense(largestExp);
-
-        // Calculate average spending by day of week
-        const avgSpending = Object.entries(dayOfWeekSpending).map(([day, data]) => ({
-            day,
-            amount: data.count > 0 ? data.total / data.count : 0
-        }));
-        setAvgSpendingByDayOfWeek(avgSpending);
-
-        // Calculate month-over-month change
-        const sortedMonths = Object.keys(monthlyTotals).sort();
-        if (sortedMonths.length >= 2) {
-            const currentMonth = monthlyTotals[sortedMonths[sortedMonths.length - 1]];
-            const previousMonth = monthlyTotals[sortedMonths[sortedMonths.length - 2]];
-            setMonthOverMonthChange(((currentMonth - previousMonth) / previousMonth) * 100);
-        }
-
-        // Calculate year-over-year change
-        const sortedYears = Object.keys(yearlyTotals).sort();
-        if (sortedYears.length >= 2) {
-            const currentYear = yearlyTotals[sortedYears[sortedYears.length - 1]];
-            const previousYear = yearlyTotals[sortedYears[sortedYears.length - 2]];
-            setYearOverYearChange(((currentYear - previousYear) / previousYear) * 100);
-        }
-
-        const daysDifference = (latestDate.getTime() - earliestDate.getTime()) / (1000 * 3600 * 24) + 1;
-        const monthsDifference = (latestDate.getFullYear() - earliestDate.getFullYear()) * 12 +
-            (latestDate.getMonth() - earliestDate.getMonth()) + 1;
-
-        setAvgMonthlySpend(totalSpent / monthsDifference);
-        setAvgDailySpend(totalSpent / daysDifference);
-
-        const topMerchantEntry = Object.entries(merchantTotals).reduce((a, b) => a[1] > b[1] ? a : b);
-        setTopMerchant({ name: topMerchantEntry[0], amount: topMerchantEntry[1] });
-
-        const sortedCategories = Object.entries(categoryTotals)
-            .sort((a, b) => b[1] - a[1]);
-
-        const top5Categories = sortedCategories.slice(0, 4);
-        const otherCategories = sortedCategories.slice(4);
-
-        const otherTotal = otherCategories.reduce((sum, [_, value]) => sum + value, 0);
-
-        const categoryBreakdownData = [
-            ...top5Categories.map(([name, value]) => ({ name, value })),
-            { name: 'Other', value: otherTotal }
-        ];
-        setCategoryBreakdown(categoryBreakdownData);
-
-        // Add logic to process category trend data
-        const categoryTrendMap: { [key: string]: { [key: string]: number } } = {};
-        transactions.forEach(t => {
-            if (t.amount < 0) { // Only consider expenses
-                const monthYear = new Date(t.date).toISOString().slice(0, 7); // YYYY-MM format
-                if (!categoryTrendMap[monthYear]) {
-                    categoryTrendMap[monthYear] = {};
+    
+            // Calculate year-over-year change with safety checks
+            const sortedYears = Object.keys(yearlyTotals).sort();
+            if (sortedYears.length >= 2) {
+                const currentYear = yearlyTotals[sortedYears[sortedYears.length - 1]] || 0;
+                const previousYear = yearlyTotals[sortedYears[sortedYears.length - 2]] || 0;
+                const yoyChange = previousYear !== 0 ? ((currentYear - previousYear) / previousYear) * 100 : 0;
+                setYearOverYearChange(yoyChange);
+            } else {
+                setYearOverYearChange(0);
+            }
+    
+            // Calculate averages with safety checks
+            const daysDifference = Math.max(1, (latestDate.getTime() - earliestDate.getTime()) / (1000 * 3600 * 24) + 1);
+            const monthsDifference = Math.max(1, (latestDate.getFullYear() - earliestDate.getFullYear()) * 12 +
+                (latestDate.getMonth() - earliestDate.getMonth()) + 1);
+    
+            setAvgMonthlySpend(totalSpent / monthsDifference);
+            setAvgDailySpend(totalSpent / daysDifference);
+    
+            // Set top merchant with safety check
+            const merchantEntries = Object.entries(merchantTotals);
+            if (merchantEntries.length > 0) {
+                const topMerchantEntry = merchantEntries.reduce((a, b) => a[1] > b[1] ? a : b);
+                setTopMerchant({ name: topMerchantEntry[0], amount: topMerchantEntry[1] });
+            } else {
+                setTopMerchant({ name: 'No merchant data', amount: 0 });
+            }
+    
+            // Process category data with safety checks
+            const sortedCategories = Object.entries(categoryTotals)
+                .sort((a, b) => b[1] - a[1]);
+    
+            const hasCategoryData = sortedCategories.length > 0;
+            setHasCategoryData(hasCategoryData);
+    
+            if (hasCategoryData) {
+                const top5Categories = sortedCategories.slice(0, 4);
+                const otherCategories = sortedCategories.slice(4);
+                const otherTotal = otherCategories.reduce((sum, [_, value]) => sum + value, 0);
+    
+                const categoryBreakdownData = [
+                    ...top5Categories.map(([name, value]) => ({ name, value })),
+                    ...(otherTotal > 0 ? [{ name: 'Other', value: otherTotal }] : [])
+                ];
+                setCategoryBreakdown(categoryBreakdownData);
+            } else {
+                setCategoryBreakdown([{ name: 'Uncategorized', value: totalSpent }]);
+            }
+    
+            // Process category trend data with safety checks
+            const categoryTrendMap: { [key: string]: { [key: string]: number } } = {};
+            transactions.forEach(t => {
+                if (t.amount < 0 && t.date) {
+                    const monthYear = new Date(t.date).toISOString().slice(0, 7);
+                    if (!categoryTrendMap[monthYear]) {
+                        categoryTrendMap[monthYear] = {};
+                    }
+                    const category = t.category || 'Uncategorized';
+                    categoryTrendMap[monthYear][category] = (categoryTrendMap[monthYear][category] || 0) + Math.abs(t.amount);
                 }
-                const category = t.category || 'Uncategorized';
-                categoryTrendMap[monthYear][category] = (categoryTrendMap[monthYear][category] || 0) + Math.abs(t.amount);
-            }
-        });
-
-        const categoryTrendData: CategoryTrendItem[] = Object.entries(categoryTrendMap).map(([date, categories]) => ({
-            date,
-            ...categories
-        }));
-
-        setCategoryTrendData(categoryTrendData.sort((a, b) => a.date.localeCompare(b.date)));
-
-        const sortedMonthlySpending = Object.entries(monthlySpendingData)
-            .sort(([dateA], [dateB]) => dateA.localeCompare(dateB))
-            .map(([date, amount]) => ({ date, amount }));
-
-        setMonthlySpending(sortedMonthlySpending);
-
-
-        const recurringThreshold = 3;
-        const recurring = Object.entries(recurringCandidates)
-            .filter(([_, data]) => data.months.length >= recurringThreshold)
-            .map(([key, data]) => ({
-                description: key.split('-')[0],
-                amount: data.amount,
-                months: data.months
-                    .sort((a, b) => a - b)
-                    .map(m => new Date(0, m).toLocaleString('default', { month: 'short' }))
-                    .join(', ')
-            }))
-            .sort((a, b) => b.amount - a.amount);
-        setRecurringPayments(recurring);
-
+            });
+    
+            const categoryTrendData = Object.entries(categoryTrendMap).map(([date, categories]) => ({
+                date,
+                ...categories
+            }));
+    
+            setCategoryTrendData(categoryTrendData.sort((a, b) => a.date.localeCompare(b.date)));
+    
+            // Process monthly spending data
+            const sortedMonthlySpending = Object.entries(monthlySpendingData)
+                .sort(([dateA], [dateB]) => dateA.localeCompare(dateB))
+                .map(([date, amount]) => ({ date, amount }));
+    
+            setMonthlySpending(sortedMonthlySpending);
+    
+            // Process recurring payments with safety checks
+            const recurringThreshold = 3;
+            const recurring = Object.entries(recurringCandidates)
+                .filter(([_, data]) => data.months.length >= recurringThreshold)
+                .map(([key, data]) => ({
+                    description: key.split('-')[0],
+                    amount: data.amount,
+                    months: data.months
+                        .sort((a, b) => a - b)
+                        .map(m => new Date(0, m).toLocaleString('default', { month: 'short' }))
+                        .join(', ')
+                }))
+                .sort((a, b) => b.amount - a.amount);
+            setRecurringPayments(recurring);
+    
+        } catch (error) {
+            console.error('Error processing transactions:', error);
+            // Set default/fallback values for critical states
+            setTotalSpent(0);
+            setTotalIncome(0);
+            setAvgMonthlySpend(0);
+            setAvgDailySpend(0);
+            setTopMerchant({ name: 'Error processing data', amount: 0 });
+            setCategoryBreakdown([{ name: 'Error', value: 0 }]);
+            setMonthlySpending([]);
+            setRecurringPayments([]);
+        }
     }, []);
 
     const toggleChangeMetric = () => {
         setShowYearOverYear(!showYearOverYear);
     };
-
 
     const detectCSVType = (headers: string[]): 'AMEX' | 'Chase' | 'Capital One' | 'Unknown' => {
         const headerSet = new Set(headers);
@@ -678,16 +751,6 @@ const SpendingDashboard: React.FC = () => {
                 ) : (
                     <EmptyState onFileUpload={handleFileUpload} />
                 )}
-                <div className="flex justify-center items-center mt-8">
-                    <a
-                        href="https://buymeacoffee.com/gregmac"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-block px-4 py-2 bg-indigo-200 text-black font-bold rounded-lg shadow-md hover:bg-indigo-300 transition duration-200"
-                    >
-                        ☕ Buy me a coffee
-                    </a>
-                </div>
 
                 {/* Improved Feedback form at the bottom */}
                 <div className="mt-8 flex justify-center">
@@ -713,6 +776,17 @@ const SpendingDashboard: React.FC = () => {
                         </button>
                     </form>
                 </div>
+                {/* <div className="flex justify-center items-center mt-8">
+                    <a
+                        href="https://buymeacoffee.com/gregmac"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-block px-4 py-2 bg-indigo-200 text-black font-bold rounded-lg shadow-md hover:bg-indigo-300 transition duration-200"
+                    >
+                        ☕ Buy me a coffee
+                    </a>
+                </div> */}
+
             </div>
         </div >
     );

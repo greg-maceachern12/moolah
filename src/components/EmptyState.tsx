@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Shield, Upload, ChevronDown, DollarSign, 
   PieChart, TrendingUp, Sparkles, LucideIcon,
-  HelpCircle, ExternalLink
+  HelpCircle, ExternalLink, Download
 } from 'lucide-react';
 
 interface FeatureCardProps {
@@ -65,6 +65,16 @@ const EmptyState: React.FC<EmptyStateProps> = ({ onFileUpload }) => {
     if (uploadInput) {
       uploadInput.click();
     }
+  };
+
+  const handleSampleDataDownload = () => {
+    const sampleData = `/sample-transactions.csv`;
+    const link = document.createElement('a');
+    link.href = sampleData;
+    link.download = 'sample-transactions.csv';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
@@ -136,7 +146,7 @@ const EmptyState: React.FC<EmptyStateProps> = ({ onFileUpload }) => {
             </motion.button>
           </motion.div>
           
-          <div className="absolute -bottom-3 left-1/2 transform -translate-x-1/2">
+          <div className="absolute -bottom-3 left-1/2 transform -translate-x-1/2 flex gap-4">
             <div className="bg-green-50 border border-green-200 rounded-full py-2 px-4 
               flex items-center space-x-2 shadow-sm">
               <Shield className="w-4 h-4 text-green-600 flex-shrink-0" />
@@ -144,6 +154,18 @@ const EmptyState: React.FC<EmptyStateProps> = ({ onFileUpload }) => {
                 Your data is processed locally*
               </p>
             </div>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={handleSampleDataDownload}
+              className="bg-orange-50 border border-orange-200 rounded-full py-2 px-4 
+                flex items-center space-x-2 shadow-sm hover:bg-orange-100 transition-colors duration-200"
+            >
+              <Download className="w-4 h-4 text-orange-600 flex-shrink-0" />
+              <span className="text-orange-800 text-sm whitespace-nowrap">
+                Try with sample data
+              </span>
+            </motion.button>
           </div>
         </div>
       </motion.div>
@@ -240,6 +262,7 @@ const EmptyState: React.FC<EmptyStateProps> = ({ onFileUpload }) => {
                       Supported banks: Chase, American Express, Capital One and more
                     </p>
                   </div>
+                  
                 </div>
               </div>
             </motion.div>
