@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Shield, Upload, ChevronDown, DollarSign, 
   PieChart, TrendingUp, Sparkles, LucideIcon,
-  HelpCircle, ExternalLink, Download
+  HelpCircle, ExternalLink, FileSpreadsheet
 } from 'lucide-react';
 
 interface FeatureCardProps {
@@ -67,15 +67,35 @@ const EmptyState: React.FC<EmptyStateProps> = ({ onFileUpload }) => {
     }
   };
 
-  const handleSampleDataDownload = () => {
-    const sampleData = `/sample-transactions.csv`;
-    const link = document.createElement('a');
-    link.href = sampleData;
-    link.download = 'sample-transactions.csv';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+  const handleSampleDataClick = async () => {
+    try {
+      const response = await fetch('/sample-transactions.csv');
+      const csvText = await response.text();
+      const file = new File([csvText], 'sample-transactions.csv', { type: 'text/csv' });
+      
+      const input = document.createElement('input');
+      input.type = 'file';
+      
+      const event = new Event('change', { bubbles: true });
+      Object.defineProperty(input, 'files', {
+        value: [file]
+      });
+      
+      const syntheticEvent = {
+        ...event,
+        target: input,
+        currentTarget: input,
+        persist: () => {},
+        preventDefault: () => {},
+        stopPropagation: () => {},
+        nativeEvent: event,
+      } as unknown as React.ChangeEvent<HTMLInputElement>;
+      
+      onFileUpload(syntheticEvent);
+    } catch (error) {
+      console.error('Error loading sample data:', error);
+    }
+   };
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-12">
@@ -134,19 +154,31 @@ const EmptyState: React.FC<EmptyStateProps> = ({ onFileUpload }) => {
               accept=".csv"
               multiple
             />
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="bg-indigo-600 text-white px-8 py-4 rounded-xl font-medium 
-                hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 
-                focus:ring-offset-2 transition-colors duration-200"
-              onClick={handleUploadClick}
-            >
-              Select CSV File
-            </motion.button>
+            <div className="flex flex-col items-center gap-3">
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="bg-indigo-600 text-white px-8 py-4 rounded-xl font-medium 
+                  hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 
+                  focus:ring-offset-2 transition-colors duration-200"
+                onClick={handleUploadClick}
+              >
+                Select CSV File
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={handleSampleDataClick}
+                className="text-gray-600 text-sm px-4 py-2 rounded-lg 
+                  flex items-center gap-2 hover:bg-gray-100 transition-colors duration-200"
+              >
+                <FileSpreadsheet className="w-4 h-4" />
+                Try with sample data
+              </motion.button>
+            </div>
           </motion.div>
           
-          <div className="absolute -bottom-3 left-1/2 transform -translate-x-1/2 flex gap-4">
+          <div className="absolute -bottom-3 left-1/2 transform -translate-x-1/2">
             <div className="bg-green-50 border border-green-200 rounded-full py-2 px-4 
               flex items-center space-x-2 shadow-sm">
               <Shield className="w-4 h-4 text-green-600 flex-shrink-0" />
@@ -154,18 +186,6 @@ const EmptyState: React.FC<EmptyStateProps> = ({ onFileUpload }) => {
                 Your data is processed locally*
               </p>
             </div>
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={handleSampleDataDownload}
-              className="bg-orange-50 border border-orange-200 rounded-full py-2 px-4 
-                flex items-center space-x-2 shadow-sm hover:bg-orange-100 transition-colors duration-200"
-            >
-              <Download className="w-4 h-4 text-orange-600 flex-shrink-0" />
-              <span className="text-orange-800 text-sm whitespace-nowrap">
-                Try with sample data
-              </span>
-            </motion.button>
           </div>
         </div>
       </motion.div>
